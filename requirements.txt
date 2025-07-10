@@ -1,3 +1,5 @@
 streamlit
 requests
 pyproj
+folium
+streamlit-folium

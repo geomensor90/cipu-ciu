@@ -1,5 +1,5 @@
-streamlit>=1.36.0
-requests>=2.32.3
-pyproj>=3.6.1
-folium>=0.16.0 
-streamlit-folium>=1.1.2 
+streamlit
+requests
+pyproj
+folium
+streamlit-folium

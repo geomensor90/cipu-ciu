@@ -356,10 +356,10 @@ if st.session_state.all_general_data:
         
         # Adiciona o marcador para a coordenada do item selecionado (sem popup_text)
         if selected_coords:
-            feature_info = st.session_state.all_general_data[st.session_state.selected_feature_index]
+            # Opção 1: Usar um ícone Font Awesome (ex: casa)
             folium.Marker(
-                location=selected_coords
-                # tooltip=f"CIPU: {feature_info.get('cipu', 'N/A')}" # Linha removida/comentada
+                location=selected_coords,
+                icon=folium.Icon(icon="home", color="blue", prefix='fa') # 'fa' é o prefixo para Font Awesome
             ).add_to(m)
         
         # Exibe o mapa no Streamlit

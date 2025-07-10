@@ -358,11 +358,9 @@ if st.session_state.all_general_data:
         if selected_coords:
             feature_info = st.session_state.all_general_data[st.session_state.selected_feature_index]
             folium.Marker(
-                location=selected_coords,
-                tooltip=f"CIPU: {feature_info.get('cipu', 'N/A')}" # Apenas tooltip
+                location=selected_coords
+                # tooltip=f"CIPU: {feature_info.get('cipu', 'N/A')}" # Linha removida/comentada
             ).add_to(m)
-        else:
-            st.warning("Coordenadas de localização não disponíveis para o item selecionado.")
         
         # Exibe o mapa no Streamlit
         st_folium(m, width=700, height=500)

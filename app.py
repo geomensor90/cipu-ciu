@@ -33,7 +33,7 @@ st.title("Consulta de Cadastro Territorial")
 
 # Formulário de pesquisa
 with st.form("search_form"):
-    search_field = st.selectbox("Pesquisar por", ["CIPU", "CIU", "pu_arquivo"])
+    search_field = st.selectbox("Pesquisar por", ["CIPU", "CIU"])
     search_value = st.text_input("Digite o valor para pesquisa")
     submitted = st.form_submit_button("Pesquisar")
 

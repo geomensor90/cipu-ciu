@@ -11,9 +11,11 @@ import html
 from fpdf import FPDF
 import urllib.parse  # Para evitar problemas com caracteres especiais
 import pandas as pd
+from pyproj import Transformer
+import time
 
 # Use um expander para "esconder" o formulário de busca
-with st.expander("Clique para buscar endereços", expanded=False):
+with st.expander("Encontre o CIPU do imóvel", expanded=False):
     # URL do serviço ArcGIS REST para consulta de endereços
     ARCGIS_SERVICE_URL = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CADASTRO_TERRITORIAL/FeatureServer/10/query"
 
@@ -24,7 +26,7 @@ with st.expander("Clique para buscar endereços", expanded=False):
     CIU_FIELD_NAME = "pu_ciu"   
 
 
-    st.title("🗺️ Localizador de Endereços por Quadra - Geoportal DF")
+    st.markdown("🗺️ **Localizador de Endereços por Quadra - Geoportal DF**")
 
     st.markdown(
         """
@@ -80,8 +82,7 @@ with st.expander("Clique para buscar endereços", expanded=False):
 
                             st.markdown("---")
                             st.info("Você pode copiar o CIPU ou CIU da tabela acima para outras pesquisas.")
-                            with st.expander("Ver todos os dados brutos (JSON)"):
-                                st.json(data)
+
                         else:
                             st.warning(f"Nenhum dado encontrado com campos úteis para '{quadra_input}'.")
                     else:
@@ -139,15 +140,18 @@ if 'show_cota_soleira_data' not in st.session_state:
 
 
 # Título do app
-st.title("Consulta de Cadastro Territorial")
+st.subheader("Parâmetros Urbanísticos")
 
 # Formulário de pesquisa
 with st.form("search_form"):
-    search_field = st.selectbox("Pesquisar por", ["CIPU", "CIU", "pu_arquivo"])
+    search_field = st.selectbox("Pesquisar por", ["CIPU", "CIU"])
     search_value = st.text_input("Digite o valor para pesquisa")
     submitted = st.form_submit_button("Pesquisar")
 
 if submitted:
+
+    search_value = search_value.replace(".", "").replace(",", "").strip()
+
     # Reinicia os estados de exibição ao submeter uma nova pesquisa
     st.session_state.show_luos_data = False
     st.session_state.show_map = False
@@ -183,13 +187,10 @@ if submitted:
         params = {
             "where": where_clause,
             "outFields": "pu_ciu,pu_cipu,pu_projeto,pu_situacao,pn_norma_vg,x,y,pu_arquivo,pn_cod_par", # Incluindo pu_arquivo
-            "returnGeometry": "false",
+            "returnGeometry": "true",
             "f": "json"
         }
        
-
-
-
         try:
             response = requests.get(api_url, params=params)
             response.raise_for_status() # Levanta um erro para códigos de status HTTP ruins (4xx ou 5xx)
@@ -236,7 +237,8 @@ if submitted:
                         "latitude": current_lat,
                         "longitude": current_lon,
                         "pu_arquivo": attrs.get('pu_arquivo', 'N/A'), 
-                        "codigo_parametro": attrs.get('pn_cod_par', 'N/A')
+                        "codigo_parametro": attrs.get('pn_cod_par', 'N/A'),
+                        "geometry": feature.get("geometry") # <-- Novo campo para armazenar a geometria
                     }
                     st.session_state.all_general_data.append(general_entry)
 
@@ -303,15 +305,6 @@ if st.session_state.all_general_data:
 
         st.write(f"**Projeto**: {selected_data.get('projeto', 'N/A')}")
         
-        situacao_map = {
-            1: "Registrado",
-            2: "Aprovado",
-            4: "Escriturado"
-        }
-        situacao_codigo = selected_data.get("situacao_codigo")
-        situacao_texto = situacao_map.get(situacao_codigo, "Desconhecido")
-        st.write(f"**Situação**: {situacao_texto}")
-
         #st.write(f"**Norma Vigente**: {selected_data.get('norma_vigente', 'N/A')}")
         norma_vigente = selected_data.get('norma_vigente', 'N/A')
 
@@ -321,19 +314,102 @@ if st.session_state.all_general_data:
 
         
         # Adiciona texto adicional conforme o caso
+        # Adiciona texto adicional conforme o caso
         if norma_vigente == "LC 1041/2024":
             norma_vigente += " (PPCUB) "
-            st.write(f"**Parametro**: {linkppcub + codigo_parametro}")
+            url_completa = linkppcub + codigo_parametro
+            st.markdown(f'**Parâmetro**: <a href="{url_completa}" target="_blank">{url_completa}</a>', unsafe_allow_html=True)
+
         elif norma_vigente == "LC 948/2019 alterada pela LC 1007/2022":
             norma_vigente += " (LUOS)"
 
         st.write(f"**Norma Vigente**: {norma_vigente}")
 
-        st.write(f"**Latitude (WGS84)**: {selected_data.get('latitude', 'N/A')}")
-        st.write(f"**Longitude (WGS84)**: {selected_data.get('longitude', 'N/A')}")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.write(f"**Latitude:** {selected_data.get('latitude', 'N/A')}")
+
+        with col2:
+            st.write(f"**Longitude:** {selected_data.get('longitude', 'N/A')}")
 
         link_google_maps = f"https://www.google.com/maps?q={selected_data.get('latitude', 'N/A')},{selected_data.get('longitude', 'N/A')}"
-        st.write(f"[Abrir no Google Maps]({link_google_maps})", unsafe_allow_html=True)
+        st.write(f"[🗺️ Abrir no Google Maps 🗺️]({link_google_maps})", unsafe_allow_html=True)
+        st.divider()
+
+        ################## certidão dos parâmetros
+        # Mostrar os resultados gerais
+        if st.session_state.all_general_data:
+            st.write(" ---- **Certidão dos Parâmetros Urbanísticos** ---- ")
+            
+            for idx, result in enumerate(st.session_state.all_general_data):
+                with st.container():
+                    st.write(f"**Resultado {idx + 1}**")
+                    st.write(f"CIU: {result['ciu']}")
+                    st.write(f"CIPU: {result['cipu']}")
+                    st.write(f"Projeto: {result['projeto']}")
+                    
+                    # Botão para gerar certidão - só aparece se houver CIPU
+                    if result['cipu'] != 'N/A':
+                        if st.button(f"Gerar Certidão para CIPU {result['cipu']}", key=f"cert_{result['cipu']}_{idx}"):
+                            st.info("Enviando requisição...  - **Pode demorar até 10 segundos**")
+                            
+                            url_submit = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/certidaoparametrosurb/GPServer/certidao_parametros_urb/submitJob"
+                            payload = {"codigo": str(result['cipu']), "f": "json"}
+                            
+                            try:
+                                response = requests.post(url_submit, data=payload)
+                                response.raise_for_status()
+                                res_json = response.json()
+                            except Exception as e:
+                                st.error(f"Erro ao enviar requisição: {e}")
+                                st.stop()
+                            
+                            # Restante do código de processamento da certidão...
+                            job_id = res_json.get("jobId")
+                            if not job_id:
+                                st.error("Job ID não retornado.")
+                                st.stop()
+                            
+                            status_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/certidaoparametrosurb/GPServer/certidao_parametros_urb/jobs/{job_id}?f=json"
+                            while True:
+                                status_resp = requests.get(status_url).json()
+                                job_status = status_resp.get("jobStatus", "")
+                                if job_status == "esriJobSucceeded":
+                                    break
+                                elif job_status in ["esriJobFailed", "esriJobCancelled"]:
+                                    st.error("Job falhou ou foi cancelado.")
+                                    st.stop()
+                                time.sleep(2)
+                            
+                            job_info = requests.get(status_url).json()
+                            pdf_url = None
+                            
+                            if "results" in job_info:
+                                for key, val in job_info["results"].items():
+                                    if key == "arquivo":
+                                        result_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/certidaoparametrosurb/GPServer/certidao_parametros_urb/jobs/{job_id}/{val['paramUrl']}?f=json"
+                                        result = requests.get(result_url).json()
+                                        pdf_url = result.get("value")
+                            
+                            if not pdf_url:
+                                st.warning("Link para o PDF não encontrado.")
+                                st.stop()
+                            
+                            st.subheader("📄 Certidão Gerada")
+                            st.markdown(f"[Clique aqui para abrir o PDF]({pdf_url})", unsafe_allow_html=True)
+
+
+
+
+
+
+        #################################
+        
+
+
+
+
 
     # --- Botão para carregar Detalhes LUOS ---
     if selected_cipu != 'N/A':
@@ -673,47 +749,106 @@ if st.session_state.all_general_data:
 
 
     # --- Botão para carregar o Mapa ---
+    # --- Botão para carregar o Mapa ---
     if st.button("**Carregar Mapa**"):
         st.session_state.show_map = True
 
     # --- Exibir o mapa Folium (Exibir apenas se o botão foi clicado) ---
     if st.session_state.show_map:
         st.subheader("Localização no Mapa")
-        
-        # O estilo do mapa é fixo agora
-        selected_tiles = "Esri.WorldImagery"
 
-        # Centraliza o mapa na coordenada do item selecionado ou no centro do Brasil
+        # Obtém os dados do resultado selecionado
+        selected_data = st.session_state.all_general_data[st.session_state.selected_feature_index]
         selected_coords = st.session_state.map_coords_list[st.session_state.selected_feature_index] if st.session_state.map_coords_list else None
         
-        center_coords = selected_coords if selected_coords else [-15.7797, -47.9297] # Centro de Brasília como fallback
+        # Define o centro do mapa com base no polígono ou na coordenada do marcador
+        center_coords = selected_coords if selected_coords else [-15.7797, -47.9297]  # Centro de Brasília como fallback
 
-        m = folium.Map(location=center_coords, zoom_start=15, tiles=selected_tiles)
-        
-        # Adiciona camada WMS
+        # Cria o mapa base (satélite)
+        m = folium.Map(location=center_coords, zoom_start=20, tiles="Esri.WorldImagery")
+
+        # Adiciona a camada WMS dos lotes (desligada por padrão)
         folium.raster_layers.WmsTileLayer(
             url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Publico/CADASTRO_TERRITORIAL/MapServer/WMSServer",
             name="Lotes Registrados",
-            layers="6",  # Aqui é a camada correta
+            layers="6",
             fmt="image/png",
             transparent=True,
             attr="GDF / GeoServiços",
-            show=False  # <== começa escondido
+            show=False  # Desligado por padrão
         ).add_to(m)
 
-        # Adiciona controle para ativar/desativar camadas
+                # Adiciona a camada WMS dos lotes (desligada por padrão)
+        folium.raster_layers.WmsTileLayer(
+            url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Publico/CONTROLE_URBANO/MapServer/WMSServer",
+            name="Cota de Soleira",
+            layers="18",
+            fmt="image/png",
+            transparent=True,
+            attr="GDF / GeoServiços",
+            show=False  # Desligado por padrão
+        ).add_to(m)
+
+        # Adiciona o polígono do lote selecionado
+        selected_geometry = selected_data.get("geometry")
+
+        if selected_geometry and selected_geometry.get('rings'):
+            # Transforma as coordenadas do polígono de UTM (31983) para Lat/Lon (4326)
+            transformed_rings = []
+            for ring in selected_geometry.get('rings'):
+                transformed_ring = []
+                for x, y in ring:
+                    lon, lat = transformer.transform(x, y)  # Usa o transformer que você já tem
+                    transformed_ring.append([lon, lat])
+                transformed_rings.append(transformed_ring)
+
+            # Cria uma feature GeoJSON a partir da geometria convertida
+            geojson_feature = {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": transformed_rings
+                },
+                "properties": {
+                    "cipu": selected_data.get("cipu"),
+                    "ciu": selected_data.get("ciu")
+                }
+            }
+            
+            # Texto do pop-up para o polígono
+            popup_text = f"""
+            <b>CIPU:</b> {selected_data.get("cipu")}<br>
+            <b>CIU:</b> {selected_data.get("ciu")}<br>
+            """
+
+            # Adiciona o polígono ao mapa com estilo e pop-up
+            folium.GeoJson(
+                geojson_feature,
+                name="Lote Selecionado",
+                tooltip="Clique para mais informações",
+                popup=folium.Popup(popup_text, max_width=300),
+                style_function=lambda feature: {
+                    "fillColor": "blue",
+                    "color": "red",
+                    "weight": 3,
+                    "fillOpacity": 0.05
+                }
+            ).add_to(m)
+            
+            # Adiciona marcador no centro do polígono (opcional)
+            # if selected_coords:
+             #    folium.Marker(
+              #       location=selected_coords,
+               #      icon=folium.Icon(icon="home", color="blue", prefix='fa')
+                # ).add_to(m)
+
+        # Adiciona o controle de camadas
         folium.LayerControl().add_to(m)
 
-        # Adiciona o marcador para a coordenada do item selecionado (sem popup_text)
-        if selected_coords:
-        # Opção 1: Usar um ícone Font Awesome (ex: casa)
-            folium.Marker(
-                location=selected_coords,
-                icon=folium.Icon(icon="home", color="blue", prefix='fa') # 'fa' é o prefixo para Font Awesome
-            ).add_to(m)
-        
         # Exibe o mapa no Streamlit
         st_folium(m, width=700, height=500)
+
+
 else:
     st.info("Use o formulário acima para pesquisar e ver os resultados do Cadastro Territorial.")
 
@@ -734,7 +869,76 @@ if 'texto_livre' not in st.session_state:
 
 
 
+#######################
+#SEDUH
+with st.expander("**Anexo III - Parâmetros Urbanísticos do Terreno**"):
+    # Dados das regiões e links (no formato: Região;Link1;Link2)
+    # Dados das regiões e links (no formato: Região;Link1;Link2)
+    dados_regioes = """
+    Gama;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-1A_Gama.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-1A_Gama.pdf
+    Taguatinga;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-2A_Taguatinga.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-2A_Taguatinga.pdf
+    Brazlândia;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-3A_Brazlandia.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-3A_Brazlandia.pdf
+    Sobradinho;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-4A_Sobradinho.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-4A_Sobradinho.pdf
+    Planaltina;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-5A-Planaltina.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-5A_Planaltina.pdf
+    Paranoá;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-6A_Paranoa.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-6A_Paranoa.pdf
+    Núcleo Bandeirante;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-7A_Nucleo-Bandeirante.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-7A_Nucleo-Bandeirante.pdf
+    Ceilândia;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-8A_Ceilandia.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-8A_Ceilandia.pdf
+    Guará;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-9A_Guara.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-9A_Guara.pdf
+    Samambaia;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-10A_Samambaia.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-10A_Samambaia.pdf
+    Santa Maria;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-11A_Santa-Maria.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-11A_Santa-Maria.pdf
+    Sao Sebastiao;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-12A_Sao-Sebastiao.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-12A_Sao-Sebastiao.pdf
+    Recanto das Emas;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-13A_Recanto-das-Emas.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-13A_Recanto-das-Emas.pdf
+    Lago Sul;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-14A_Lago-Sul.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-14A_Lago-Sul.pdf
+    Riacho Fundo;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-15A_Riacho-Fundo.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-15A_Riacho-Fundo.pdf
+    Lago Norte;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-16A_Lago-Norte.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-16A_Lago-Norte.pdf
+    Aguas Claras;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-17A_Aguas-Claras.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-17A_Aguas-Claras.pdf
+    Riacho Fundo II;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-18A_Riacho-Fundo-II.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-18A_Riacho-Fundo-II.pdf
+    Varjao;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-19A_Varjao.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-19A_Varjao.pdf
+    Park Way;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-20A_Park-Way.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-20A_Park-Way.pdf
+    SCIA;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-21A_SCIA.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-21A_SCIA.pdf
+    Sobradinho II;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-22A_Sobradinho-II.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-22A_Sobradinho.pdf
+    Jardim Botanico;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-23A_Jardim-Botanico.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-23A_Jardim-Botanico.pdf
+    Itapoa;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-24A_Itapoa.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-24A_Itapoa.pdf
+    SIA;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-25A_SIA.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-25A_SIA.pdf
+    Vicente Pires;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-26A_Vicente-Pires.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-26A_Vicente-Pires.pdf
+    Fercal;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-27A_Fercal.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-27A_Fercal.pdf
+    Sol Nascente;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-28A_Por-do-Sol_Sol-Nascente.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-28A_Sol-Nascente_Por-do-Sol.pdf
+    Arniqueira;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-29A_Arniqueira.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-29A_Arniqueira.pdf
+    """
 
+    # Processar os dados
+    regioes = {}
+    for linha in dados_regioes.strip().split('\n'):
+        partes = linha.split(';')
+        if len(partes) == 3:
+            regiao = partes[0]
+            link1 = partes[1]
+            link2 = partes[2]
+            regioes[regiao] = {'Mapa': link1, 'Quadro': link2}
+
+    # Interface do Streamlit
+    st.markdown('🗺️ **Consulta dos parâmetros urbanísticos - Mapas e Quadros do DF**')
+    st.markdown('Selecione uma região administrativa do Distrito Federal para acessar os documentos relacionados.')
+
+    # Seleção da região
+    regiao_selecionada = st.selectbox(
+        'Selecione a região:',
+        sorted(regioes.keys()),
+        index=0,
+        help='Escolha uma região administrativa do DF'
+    )
+
+    # Exibir os links
+    if regiao_selecionada:
+        st.markdown(f'Documentos para {regiao_selecionada}')
+        
+        st.markdown(f'**Mapa:** [Abrir Mapa PDF]({regioes[regiao_selecionada]["Mapa"]})', unsafe_allow_html=True)
+        st.markdown(f'**Quadro:** [Abrir Quadro PDF]({regioes[regiao_selecionada]["Quadro"]})', unsafe_allow_html=True)
+
+
+
+
+##############
 
 
 #######################################
@@ -742,13 +946,10 @@ if 'texto_livre' not in st.session_state:
 # Layout do formulário
 # --- Expander Principal ---
 with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
-    st.header("Análise de Vistoria")
-    st.write("Selecione as opções e preencha os campos para gerar o relatório final.")
     
-    st.divider()
+
 
     # --- Perguntas do Resumo Final ---
-    st.subheader("Resumo Final")
     
     st.write("##### 1) Existe rampa (cunha) na entrada de veículos?")
     st.radio("Selecione uma opção:", options=['Sim', 'Não'], key='rampa', horizontal=True)

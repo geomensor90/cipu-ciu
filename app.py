@@ -131,6 +131,16 @@ if 'show_normas_data' not in st.session_state:
 # # # # # # # # # # # # 
 
 # # # # # # # # # # # # 
+if 'normas_data_map2' not in st.session_state:
+    st.session_state.normas_data_map2 = {}  # Cache de normas por CIPU
+if 'show_normas_data2' not in st.session_state:
+    st.session_state.show_normas_data2 = False
+# # # # # # # # # # # # 
+
+
+
+
+# # # # # # # # # # # # 
 # Inicializar o estado da sessão (session_state)
 if 'cota_soleira_data_map' not in st.session_state:
     st.session_state.cota_soleira_data_map = {}
@@ -552,18 +562,29 @@ if st.session_state.all_general_data:
     ##########################
     # --- Botão para carregar Informações de Normas ---
     if selected_cipu != 'N/A':
-        if st.button("**Carregar NGB**"):
+        if st.button("**Carregar Projeto**"):
             st.session_state.show_normas_data = True
+            st.session_state.show_normas_data2 = True
             if selected_cipu not in st.session_state.normas_data_map:
                 st.info(f"Buscando informações de Normas para CIPU {selected_cipu}...")
                 where_clause_normas = f"pn_cipu = {int(selected_cipu)}"
+                cipu_utilizado = f"qd_cipu = {int(selected_cipu)}"
                 api_url_normas = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CADASTRO_TERRITORIAL/FeatureServer/18/query"
+                api_url_normas2 = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CADASTRO_TERRITORIAL/FeatureServer/17/query"
                 params_normas = {
                     "where": where_clause_normas,
                     "outFields": "pn_uos_par,pn_uso,pn_tx_ocu,pn_cfa_b,pn_cfa_m,pn_alt_max,pn_tx_perm,pn_cota_sol,pn_subsol,pn_notas,pn_afr,pn_afu,pn_aft_lat_dir,pn_aft_lat_esq,pn_aft_obs,pn_marquise",
                     "returnGeometry": "false",
                     "f": "json"
                 }
+                params_normas2 = {
+                    "where": cipu_utilizado,
+                    "outFields": "qd_area,qd_dim_frente,qd_dim_fundo,qd_dim_chanfro",
+                    "returnGeometry": "false",
+                    "f": "json"
+                }
+                
+
                 try:
                     response_normas = requests.get(api_url_normas, params=params_normas)
                     response_normas.raise_for_status()
@@ -575,16 +596,36 @@ if st.session_state.all_general_data:
                 except requests.RequestException as e:
                     st.warning(f"Erro ao buscar informações de Normas para CIPU {selected_cipu}: {e}")
                     st.session_state.normas_data_map[selected_cipu] = None
+
+                try:
+                    response_normas2 = requests.get(api_url_normas2, params=params_normas2)
+                    response_normas2.raise_for_status()
+                    data_normas2 = response_normas2.json()
+                    if data_normas2.get("features"):
+                        st.session_state.normas_data_map2[selected_cipu] = data_normas2["features"][0]["attributes"]
+                    else:
+                        st.session_state.normas_data_map2[selected_cipu] = None
+                except requests.RequestException as e:
+                    st.warning(f"Erro ao buscar informações de Normas para CIPU {selected_cipu}: {e}")
+                    st.session_state.normas_data_map2[selected_cipu] = None
                 st.rerun()
+
+
 
     # --- Exibir Informações de Normas ---
     if st.session_state.show_normas_data:
         normas_attrs = st.session_state.normas_data_map.get(selected_cipu)
+        normas_attrs2 = st.session_state.normas_data_map2.get(selected_cipu)
+
+
+
+        # Criamos a função get_value2 fora do expander para ser acessível
+        def get_value2(val2):
+            return val2 if val2 is not None else "N/A"
         if normas_attrs:
             with st.expander("**Informações de Normas**", expanded=True):
                 def get_value(val):
                     return val if val is not None else "N/A"
-
                 st.write(f"**Uso**: {get_value(normas_attrs.get('pn_uso'))}")
                 st.write(f"**Parâmetro UOS**: {get_value(normas_attrs.get('pn_uos_par'))}")
                 st.write(f"**Coeficiente de aproveitamento básico**: {get_value(normas_attrs.get('pn_cfa_b'))}")
@@ -592,6 +633,7 @@ if st.session_state.all_general_data:
                 st.write(f"**Taxa de ocupação (%)**: {get_value(normas_attrs.get('pn_tx_ocu'))}")
                 st.write(f"**Taxa de permeabilidade (%)**: {get_value(normas_attrs.get('pn_tx_perm'))}")
                 st.write(f"**Altura máxima (m)**: {get_value(normas_attrs.get('pn_alt_max'))}")
+
 
                 # Mapeamento para cota de soleira
                 cota_sol_map2 = {
@@ -653,8 +695,20 @@ if st.session_state.all_general_data:
                 marquise_codigo2 = normas_attrs.get('pn_marquise')
                 marquise_texto2 = marquise_map2.get(marquise_codigo2, 'N/A')
                 st.write(f"**Marquise em área pública**: {marquise_texto2}")
+
+                        # do 17 aqui   
+                
+                
+                if normas_attrs2:
+                    st.write(f"**Área do projeto (m²)**: {get_value2(normas_attrs2.get('qd_area'))}")
+                    st.write(f"**Dimensão de frente**: {get_value2(normas_attrs2.get('qd_dim_frente'))}")
+                    st.write(f"**Dimensão de fundo**: {get_value2(normas_attrs2.get('qd_dim_fundo'))}")
+                    st.write(f"**Dimensão do chanfro**: {get_value2(normas_attrs2.get('qd_dim_chanfro'))}")
         else:
             st.warning(f"Nenhuma informação de Normas encontrada para CIPU {selected_cipu}.")
+
+
+                
     
     # # # # # # # # # # # # 
 # Supondo que 'selected_cipu' seja a variável com o valor de entrada (CIPU/CIU).

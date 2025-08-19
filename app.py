@@ -23,7 +23,9 @@ with st.expander("Encontre o CIPU do imóvel", expanded=False):
     ADDRESS_FIELD_NAME = "pu_end_usual"
     CARTORIAL_NAME = "pu_end_cart"
     CIPU_FIELD_NAME = "pu_cipu" 
-    CIU_FIELD_NAME = "pu_ciu"   
+    CIU_FIELD_NAME = "pu_ciu"
+    END_CARTORIAL = "pu_end_cart"
+    END_USUAL = "pu_end_usual"     
 
 
     st.markdown("🗺️ **Localizador de Endereços por Quadra - Geoportal DF**")
@@ -196,7 +198,7 @@ if submitted:
         api_url = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CADASTRO_TERRITORIAL/FeatureServer/10/query"
         params = {
             "where": where_clause,
-            "outFields": "pu_ciu,pu_cipu,pu_projeto,pu_situacao,pn_norma_vg,x,y,pu_arquivo,pn_cod_par", # Incluindo pu_arquivo
+            "outFields": "pu_ciu,pu_cipu,pu_projeto,pu_end_cart,pu_ra,pu_end_usual,pu_situacao,pn_norma_vg,x,y,pu_arquivo,pn_cod_par,qd_dim_frente,qd_dim_fundo,qd_dim_lat_dir,qd_dim_lat_esq,qd_dim_chanfro", # Incluindo pu_arquivo
             "returnGeometry": "true",
             "f": "json"
         }
@@ -241,13 +243,21 @@ if submitted:
                     general_entry = {
                         "ciu": attrs.get('pu_ciu', 'N/A'),
                         "cipu": pu_cipu if pu_cipu is not None else 'N/A',
+                        "end_cartorial": attrs.get('pu_end_cart', 'N/A'),
+                        "end_usual": attrs.get('pu_end_usual', 'N/A'),
                         "projeto": attrs.get('pu_projeto', 'N/A'),
                         "situacao_codigo": attrs.get('pu_situacao'),
                         "norma_vigente": attrs.get('pn_norma_vg', 'N/A'),
                         "latitude": current_lat,
                         "longitude": current_lon,
+                        "pu_ra": attrs.get('pu_ra', 'N/A'), 
                         "pu_arquivo": attrs.get('pu_arquivo', 'N/A'), 
-                        "codigo_parametro": attrs.get('pn_cod_par', 'N/A'),
+                        "codigo_parametro": attrs.get('pn_cod_par', 'N/A'), 
+                        "dimensao_frente": attrs.get('qd_dim_frente', 'N/A'), 
+                        "dimensao_fundo": attrs.get('qd_dim_fundo', 'N/A'), 
+                        "dimensao_direita": attrs.get('qd_dim_lat_dir', 'N/A'), 
+                        "dimensao_esquerda": attrs.get('qd_dim_lat_esq', 'N/A'), 
+                        "dimensao_chanfro": attrs.get('qd_dim_chanfro', 'N/A'),
                         "geometry": feature.get("geometry") # <-- Novo campo para armazenar a geometria
                     }
                     st.session_state.all_general_data.append(general_entry)
@@ -312,7 +322,53 @@ if st.session_state.all_general_data:
         else:
             st.write(f"**Arquivo(s)**: N/A")
         # --- Fim da lógica para múltiplos links ---
+        # Mapeia os códigos de pu_ra para os nomes das regiões administrativas
+        regioes_administrativas = {
+            1: "Plano Piloto",
+            2: "Gama",
+            3: "Taguatinga",
+            4: "Brazlândia",
+            5: "Sobradinho",
+            6: "Planaltina",
+            7: "Paranoá",
+            8: "Núcleo Bandeirante",
+            9: "Ceilândia",
+            10: "Guará",
+            11: "Cruzeiro",
+            12: "Samambaia",
+            13: "Santa Maria",
+            14: "São Sebastião",
+            15: "Recanto das Emas",
+            16: "Lago Sul",
+            17: "Riacho Fundo",
+            18: "Lago Norte",
+            19: "Candangolândia",
+            20: "Águas Claras",
+            21: "Riacho Fundo II",
+            22: "Sudoeste/Octogonal",
+            23: "Varjão",
+            24: "Park Way",
+            25: "SCIA",
+            26: "Sobradinho II",
+            27: "Jardim Botânico",
+            28: "Itapoã",
+            29: "SIA",
+            30: "Vicente Pires",
+            31: "Fercal",
+            32: "Sol Nascente e Por do Sol",
+            33: "Arniqueira",
+            34: "Arapoanga",
+            35: "Água Quente",
+            # Adicione mais mapeamentos conforme necessário
+        }
 
+        # Obtém o código de pu_ra, com 'N/A' como valor padrão
+        codigo_ra = selected_data.get('pu_ra', 'N/A')
+        nome_ra = regioes_administrativas.get((codigo_ra), 'N/A')
+
+        #st.write(f"**Endereço Cartorial:**: {selected_data.get('end_cartorial', 'N/A')}")
+        st.write(f"**Endereço Cartorial:** {selected_data.get('end_cartorial', 'N/A')} ({nome_ra})")
+        st.write(f"**Endereço Usual**: {selected_data.get('end_usual', 'N/A')} ({nome_ra})")
         st.write(f"**Projeto**: {selected_data.get('projeto', 'N/A')}")
         
         #st.write(f"**Norma Vigente**: {selected_data.get('norma_vigente', 'N/A')}")
@@ -356,8 +412,6 @@ if st.session_state.all_general_data:
                 with st.container():
                     st.write(f"**Resultado {idx + 1}**")
                     st.write(f"CIU: {result['ciu']}")
-                    st.write(f"CIPU: {result['cipu']}")
-                    st.write(f"Projeto: {result['projeto']}")
                     
                     # Botão para gerar certidão - só aparece se houver CIPU
                     if result['cipu'] != 'N/A':
@@ -579,7 +633,7 @@ if st.session_state.all_general_data:
                 }
                 params_normas2 = {
                     "where": cipu_utilizado,
-                    "outFields": "qd_area,qd_dim_frente,qd_dim_fundo,qd_dim_chanfro",
+                    "outFields": "qd_area",
                     "returnGeometry": "false",
                     "f": "json"
                 }
@@ -700,10 +754,34 @@ if st.session_state.all_general_data:
                 
                 
                 if normas_attrs2:
-                    st.write(f"**Área do projeto (m²)**: {get_value2(normas_attrs2.get('qd_area'))}")
-                    st.write(f"**Dimensão de frente**: {get_value2(normas_attrs2.get('qd_dim_frente'))}")
-                    st.write(f"**Dimensão de fundo**: {get_value2(normas_attrs2.get('qd_dim_fundo'))}")
-                    st.write(f"**Dimensão do chanfro**: {get_value2(normas_attrs2.get('qd_dim_chanfro'))}")
+
+                    #st.write(f"**Dimensão de frente**: {get_value2(normas_attrs2.get('qd_dim_frente'))}")
+                    #st.write(f"**Dimensão de fundo**: {get_value2(normas_attrs2.get('qd_dim_fundo'))}")
+                    #st.write(f"**Dimensão do chanfro**: {get_value2(normas_attrs2.get('qd_dim_chanfro'))}")
+
+                    st.write(f"**Dimensão de Frente:** {selected_data.get('dimensao_frente', 'N/A')}")
+                    st.write(f"**Dimensão de Fundo:** {selected_data.get('dimensao_fundo', 'N/A')}")
+                    st.write(f"**Dimensão Lateral Direita:** {selected_data.get('dimensao_direita', 'N/A')}")
+                    st.write(f"**Dimensão Lateral Esquerda:** {selected_data.get('dimensao_esquerda', 'N/A')}")
+                    st.write(f"**Dimensão Chanfro:** {selected_data.get('dimensao_chanfro', 'N/A')}")
+                    st.write(f"**Área do projeto (m²)**: {get_value2(normas_attrs2.get('qd_area'))}")             
+
+                    ngb_area = get_value2(normas_attrs2.get('qd_area'))
+                    ngb_coeficiente_basico = get_value(normas_attrs.get('pn_cfa_b'))
+                    ngb_coeficiente_maximo = get_value(normas_attrs.get('pn_cfa_m'))
+                    ngb_taxa_ocupacao = get_value(normas_attrs.get('pn_tx_ocu'))
+                    ngb_taxa_permeabilidade = get_value(normas_attrs.get('pn_tx_perm'))
+
+                    area_lote_float2 = float(ngb_area)
+                    coeficiente_basico_float2 = float(ngb_coeficiente_basico)
+                    coeficiente_maximo_float2 = float(ngb_coeficiente_maximo)
+                    taxa_ocupacao_float2 = float(ngb_taxa_ocupacao)
+                    taxa_permeabilidade_float2 = float(ngb_taxa_permeabilidade)
+
+                    st.write(f"*Área básica de construção calculada (m²): {area_lote_float2 * coeficiente_basico_float2:.2f}")
+                    st.write(f"*Área máxima de construção calculada (m²): {area_lote_float2 * coeficiente_maximo_float2:.2f}")
+                    st.write(f"*Taxa de ocupação calculada (m²): {area_lote_float2 * (taxa_ocupacao_float2/100):.2f}")
+                    st.write(f"*Área permeável calculada (m²): {area_lote_float2 * (taxa_permeabilidade_float2/100):.2f}")
         else:
             st.warning(f"Nenhuma informação de Normas encontrada para CIPU {selected_cipu}.")
 

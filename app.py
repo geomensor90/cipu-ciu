@@ -14,8 +14,179 @@ import pandas as pd
 from pyproj import Transformer
 import time
 
+# busca pelo mapa
+with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
+    # Ponto padrão em Brasília
+    default_point = [-15.793665, -47.882956]  # (lat, lon)
+
+    st.title("Consulta de Lotes, Pontos e Alvarás - Raio de 50m")
+
+    # Initialize session state variables if they don't exist
+    if "lotes_geojson" not in st.session_state:
+        st.session_state.lotes_geojson = None
+    if "pontos_geojson" not in st.session_state:
+        st.session_state.pontos_geojson = None
+
+    if "clicked_point" not in st.session_state:
+        st.session_state.clicked_point = default_point
+
+    # Get the current latitude and longitude from session state
+    current_lat, current_lon = st.session_state.clicked_point
+
+    # Manual input for coordinates (pre-filled with current_lat, current_lon)
+    lat_input = st.number_input("Latitude", value=current_lat, format="%.6f")
+    lon_input = st.number_input("Longitude", value=current_lon, format="%.6f")
+
+    # If manual inputs change, update the clicked_point
+    if (lat_input, lon_input) != st.session_state.clicked_point:
+        st.session_state.clicked_point = (lat_input, lon_input)
+        current_lat, current_lon = (lat_input, lon_input)
+
+    st.write(f"Coordenada atual: **{current_lat:.6f}, {current_lon:.6f}**")
+
+    # Create a Folium map centered at the current_lat, current_lon
+    mapa = folium.Map(location=[current_lat, current_lon], zoom_start=18, tiles="Esri.WorldImagery", max_zoom=23)
+
+    # Add a marker for the selected point
+    folium.CircleMarker(
+        location=[current_lat, current_lon],
+        radius=2,                  # raio do ponto (quanto menor, mais discreto)
+        color="red",               # cor da borda
+        fill=True,
+        fill_color="red",          # cor de preenchimento
+        fill_opacity=1,            # opacidade total
+        tooltip="Ponto Selecionado"
+    ).add_to(mapa)
+
+    # Add a 50m radius circle around the selected point
+    folium.Circle(
+        location=[current_lat, current_lon],
+        radius=50,
+        color="blue",
+        fill=True,
+        fill_opacity=0.01,
+        tooltip="Raio 50m"
+    ).add_to(mapa)
+
+    # --- Camadas GeoJSON ---
+
+    # Se lotes_geojson data exists in session state, add it to the map
+    if st.session_state.lotes_geojson:
+        folium.GeoJson(
+            st.session_state.lotes_geojson,
+            name="Lotes em 50m",
+            tooltip=folium.features.GeoJsonTooltip(
+                fields=['pu_cipu', 'pu_end_usual'],
+                aliases=['CIPU:', 'Endereço:']
+            ),
+            popup=folium.features.GeoJsonPopup(
+                fields=['pu_cipu', 'pu_end_usual'],
+                aliases=['CIPU:', 'Endereço:']
+            )
+        ).add_to(mapa)
+
+    # Add the points_geojson layer (Cota)
+    if st.session_state.pontos_geojson:
+        folium.GeoJson(
+            st.session_state.pontos_geojson,
+            name="Pontos de Cota",
+            marker=folium.Marker(icon=folium.Icon(color="red", icon="info-sign")),
+            tooltip=folium.features.GeoJsonTooltip(
+                fields=['cs_cota', 'cs_link'],
+                aliases=['Cota:', 'Link:'],
+                labels=True,
+                sticky=False
+            ),
+            popup=folium.features.GeoJsonPopup(
+                fields=['cs_cota', 'cs_link'],
+                aliases=['Cota:', 'Link:']
+            )
+        ).add_to(mapa)
+
+
+
+    # Adiciona controle de camadas
+    folium.LayerControl().add_to(mapa)
+
+    # Display the map and capture clicks
+    map_data = st_folium(mapa, height=600, width=900)
+
+    # Update coordinates if the map was clicked
+    if map_data and map_data["last_clicked"]:
+        new_lat = map_data["last_clicked"]["lat"]
+        new_lon = map_data["last_clicked"]["lng"]
+        if (new_lat, new_lon) != st.session_state.clicked_point:
+            st.session_state.clicked_point = (new_lat, new_lon)
+            st.rerun()
+
+    # --- Botões de Consulta ---
+
+    if st.button("Carregar Lotes (Raio de 50m)"):
+        query_lat, query_lon = st.session_state.clicked_point
+        url = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CADASTRO_TERRITORIAL/MapServer/10/query"
+        params = {
+            "geometry": f'{{"x": {query_lon}, "y": {query_lat}, "spatialReference": {{"wkid": 4326}}}}',
+            "geometryType": "esriGeometryPoint",
+            "inSR": 4326,
+            "spatialRel": "esriSpatialRelIntersects",
+            "distance": 50,
+            "units": "esriSRUnit_Meter",
+            "outFields": "pu_cipu,pu_end_usual",
+            "returnGeometry": "true",
+            "f": "geojson"
+        }
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            if "features" in data and len(data["features"]) > 0:
+                st.session_state.lotes_geojson = data
+                st.success(f"🎉 {len(data['features'])} lote(s) encontrado(s).")
+                st.rerun()
+            else:
+                st.session_state.lotes_geojson = None
+                st.warning("🧐 Nenhum lote encontrado no raio de 50m.")
+                st.rerun()
+        except requests.exceptions.RequestException as e:
+            st.error(f"❌ Erro na consulta ao serviço de lotes: {e}")
+        except ValueError:
+            st.error("❌ Erro ao decodificar a resposta JSON.")
+
+    if st.button("Carregar Pontos de Cota (Raio de 50m)"):
+        query_lat, query_lon = st.session_state.clicked_point
+        url = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Aplicacoes/COTA_SOLEIRA/MapServer/0/query"
+        params = {
+            "geometry": f'{{"x": {query_lon}, "y": {query_lat}, "spatialReference": {{"wkid": 4326}}}}',
+            "geometryType": "esriGeometryPoint",
+            "inSR": 4326,
+            "spatialRel": "esriSpatialRelIntersects",
+            "distance": 50,
+            "units": "esriSRUnit_Meter",
+            "outFields": "cs_cota,cs_link",
+            "returnGeometry": "true",
+            "f": "geojson"
+        }
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            if "features" in data and len(data["features"]) > 0:
+                st.session_state.pontos_geojson = data
+                st.success(f"🎉 {len(data['features'])} ponto(s) de cota encontrado(s).")
+                st.rerun()
+            else:
+                st.session_state.pontos_geojson = None
+                st.warning("🧐 Nenhum ponto de cota encontrado no raio de 50m.")
+                st.rerun()
+        except requests.exceptions.RequestException as e:
+            st.error(f"❌ Erro na consulta ao serviço de pontos: {e}")
+        except ValueError:
+            st.error("❌ Erro ao decodificar a resposta JSON.")
+
+
+
 # Use um expander para "esconder" o formulário de busca
-with st.expander("Encontre o CIPU do imóvel", expanded=False):
+with st.expander("Encontre o CIPU do imóvel pelo Endereço", expanded=False):
     # URL do serviço ArcGIS REST para consulta de endereços
     ARCGIS_SERVICE_URL = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CADASTRO_TERRITORIAL/FeatureServer/10/query"
 
@@ -758,7 +929,11 @@ if st.session_state.all_general_data:
                     #st.write(f"**Dimensão de frente**: {get_value2(normas_attrs2.get('qd_dim_frente'))}")
                     #st.write(f"**Dimensão de fundo**: {get_value2(normas_attrs2.get('qd_dim_fundo'))}")
                     #st.write(f"**Dimensão do chanfro**: {get_value2(normas_attrs2.get('qd_dim_chanfro'))}")
-
+                    def to_float_or_zero(value):
+                        try:
+                            return float(value)
+                        except (TypeError, ValueError):
+                            return 0.0
                     st.write(f"**Dimensão de Frente:** {selected_data.get('dimensao_frente', 'N/A')}")
                     st.write(f"**Dimensão de Fundo:** {selected_data.get('dimensao_fundo', 'N/A')}")
                     st.write(f"**Dimensão Lateral Direita:** {selected_data.get('dimensao_direita', 'N/A')}")
@@ -772,11 +947,12 @@ if st.session_state.all_general_data:
                     ngb_taxa_ocupacao = get_value(normas_attrs.get('pn_tx_ocu'))
                     ngb_taxa_permeabilidade = get_value(normas_attrs.get('pn_tx_perm'))
 
-                    area_lote_float2 = float(ngb_area)
-                    coeficiente_basico_float2 = float(ngb_coeficiente_basico)
-                    coeficiente_maximo_float2 = float(ngb_coeficiente_maximo)
-                    taxa_ocupacao_float2 = float(ngb_taxa_ocupacao)
-                    taxa_permeabilidade_float2 = float(ngb_taxa_permeabilidade)
+                    # Conversão segura para float
+                    area_lote_float2 = to_float_or_zero(ngb_area)
+                    coeficiente_basico_float2 = to_float_or_zero(ngb_coeficiente_basico)
+                    coeficiente_maximo_float2 = to_float_or_zero(ngb_coeficiente_maximo)
+                    taxa_ocupacao_float2 = to_float_or_zero(ngb_taxa_ocupacao)
+                    taxa_permeabilidade_float2 = to_float_or_zero(ngb_taxa_permeabilidade)
 
                     st.write(f"*Área básica de construção calculada (m²): {area_lote_float2 * coeficiente_basico_float2:.2f}")
                     st.write(f"*Área máxima de construção calculada (m²): {area_lote_float2 * coeficiente_maximo_float2:.2f}")
@@ -793,8 +969,8 @@ if st.session_state.all_general_data:
     if selected_cipu != 'N/A':
         if st.button("**Carregar Cotas de Soleira**"):
             st.session_state.show_cota_soleira_data = True
-
-            api_url = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CONTROLE_URBANO/MapServer/1/query"
+# https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CONTROLE_URBANO/MapServer/1/query
+            api_url = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Aplicacoes/COTA_SOLEIRA/MapServer/0/query"
             cotas_encontradas = []
 
             # --- TENTATIVA 1: Buscar por CIPU ---
@@ -910,16 +1086,6 @@ if st.session_state.all_general_data:
             show=False  # Desligado por padrão
         ).add_to(m)
 
-                # Adiciona a camada WMS dos lotes (desligada por padrão)
-        folium.raster_layers.WmsTileLayer(
-            url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Publico/CONTROLE_URBANO/MapServer/WMSServer",
-            name="Cota de Soleira",
-            layers="18",
-            fmt="image/png",
-            transparent=True,
-            attr="GDF / GeoServiços",
-            show=False  # Desligado por padrão
-        ).add_to(m)
 
         # Adiciona o polígono do lote selecionado
         selected_geometry = selected_data.get("geometry")

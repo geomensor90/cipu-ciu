@@ -9,17 +9,19 @@ import io # Para manipular o PDF em memória
 from datetime import date
 import html
 from fpdf import FPDF
+
 import urllib.parse  # Para evitar problemas com caracteres especiais
 import pandas as pd
 from pyproj import Transformer
 import time
+
 
 # busca pelo mapa
 with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
     # Ponto padrão em Brasília
     default_point = [-15.793665, -47.882956]  # (lat, lon)
 
-    st.title("Consulta de Lotes, Pontos e Alvarás - Raio de 50m")
+    st.markdown("Consulta de Lotes, Pontos e Alvarás - Raio de 50m")
 
     # Initialize session state variables if they don't exist
     if "lotes_geojson" not in st.session_state:
@@ -209,9 +211,9 @@ with st.expander("Encontre o CIPU do imóvel pelo Endereço", expanded=False):
     )
 
     # Campo de entrada para a quadra
-    quadra_input = st.text_input("Digite a quadra ou parte do endereço (ex: SQN 205)", "")
+    quadra_input = st.text_input("Busca pelo Endereço Usual", "")
 
-    if st.button("Buscar Endereços"):
+    if st.button("Buscar Endereço Usual"):
         if quadra_input:
             with st.spinner("Buscando endereços na quadra..."):
                 try:
@@ -270,7 +272,70 @@ with st.expander("Encontre o CIPU do imóvel pelo Endereço", expanded=False):
         else:
             st.warning("Por favor, digite uma quadra ou parte do endereço para buscar.")
 
+    ### busca pelo endereço cartorial
     st.markdown("---")
+    # Campo de entrada para a quadra
+    quadra_input2 = st.text_input("Busca pelo Endereço Cartorial", "")
+
+    if st.button("Buscar Endereço Cartorial"):
+        if quadra_input2:
+            with st.spinner("Buscando endereços na quadra..."):
+                try:
+                    search_term = quadra_input2.upper()
+
+                    query_params = {
+                        "where": f"UPPER({CARTORIAL_NAME}) LIKE '%{search_term}%'",
+                        "outFields": "*",
+                        "f": "json",
+                        "resultRecordCount": 5000,
+                    }
+
+                    response = requests.get(ARCGIS_SERVICE_URL, params=query_params)
+                    response.raise_for_status()
+                    data = response.json()
+
+                    if "features" in data and data["features"]:
+                        st.success(f"Encontrados {len(data['features'])} endereços relacionados a '{quadra_input2}':")
+                        
+                        results = []
+                        for feature in data["features"]:
+                            attrs = feature.get("attributes", {})
+                            results.append({
+                                ADDRESS_FIELD_NAME: attrs.get(ADDRESS_FIELD_NAME, "—"),
+                                CARTORIAL_NAME: attrs.get(CARTORIAL_NAME, "—"),
+                                CIPU_FIELD_NAME: attrs.get(CIPU_FIELD_NAME, "—"),
+                                CIU_FIELD_NAME: attrs.get(CIU_FIELD_NAME, "—"),
+                                
+                                **attrs  # mantém os demais dados disponíveis
+                            })
+                        
+                        if results:
+                            df = pd.DataFrame(results)
+
+                            # Ordena as colunas: endereço, CIPU, CIU primeiro
+                            cols_order = [col for col in [ADDRESS_FIELD_NAME, CARTORIAL_NAME, CIPU_FIELD_NAME, CIU_FIELD_NAME] if col in df.columns]
+                            other_cols = [col for col in df.columns if col not in cols_order]
+                            df = df[cols_order + other_cols]
+
+                            st.dataframe(df[cols_order], use_container_width=True)
+
+                            st.markdown("---")
+                            st.info("Você pode copiar o CIPU ou CIU da tabela acima para outras pesquisas.")
+
+                        else:
+                            st.warning(f"Nenhum dado encontrado com campos úteis para '{quadra_input2}'.")
+                    else:
+                        st.warning(f"Nenhum endereço encontrado para '{quadra_input2}'. Tente ser mais genérico ou verifique a grafia.")
+                except requests.exceptions.RequestException as e:
+                    st.error(f"Erro ao conectar ao serviço do Geoportal: {e}")
+                except KeyError as e:
+                    st.error(f"Erro ao processar os dados. Campo faltando: '{e}'")
+                    st.info(f"Verifique os nomes dos campos no serviço: https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CADASTRO_TERRITORIAL/FeatureServer/10")
+                except Exception as e:
+                    st.error(f"Ocorreu um erro inesperado: {e}")
+        else:
+            st.warning("Por favor, digite uma quadra ou parte do endereço para buscar.")
+
     st.markdown("Dados do Geoportal IDE/DF.")
 # --- Configuração do conversor de coordenadas ---
 # Transforma de EPSG:31983 (SIRGAS 2000 / UTM zone 23S - Brasília) para EPSG:4326 (WGS84 - Latitude/Longitude)
@@ -1073,7 +1138,7 @@ if st.session_state.all_general_data:
         center_coords = selected_coords if selected_coords else [-15.7797, -47.9297]  # Centro de Brasília como fallback
 
         # Cria o mapa base (satélite)
-        m = folium.Map(location=center_coords, zoom_start=20, tiles="Esri.WorldImagery")
+        m = folium.Map(location=center_coords, zoom_start=19, tiles="Esri.WorldImagery", max_zoom=21)
 
         # Adiciona a camada WMS dos lotes (desligada por padrão)
         folium.raster_layers.WmsTileLayer(
@@ -1082,6 +1147,7 @@ if st.session_state.all_general_data:
             layers="6",
             fmt="image/png",
             transparent=True,
+            max_zoom=21,
             attr="GDF / GeoServiços",
             show=False  # Desligado por padrão
         ).add_to(m)
@@ -1243,25 +1309,45 @@ with st.expander("**Anexo III - Parâmetros Urbanísticos do Terreno**"):
 # Restante do seu código permanece igual...
 # Layout do formulário
 # --- Expander Principal ---
+
+if 'endereco' not in st.session_state:
+    st.session_state.endereco = 'Não'
+if 'obs_area_verde' not in st.session_state:
+    st.session_state.obs_area_verde = 'Não'
+if 'falta_calcada' not in st.session_state:
+    st.session_state.falta_calcada = 'Não'
+
+if 'calcada_pequena' not in st.session_state:
+    st.session_state.calcada_pequena = "Não"
+if 'calcada_verde' not in st.session_state:
+    st.session_state.calcada_verde = "Não"
+if 'calcada_parway' not in st.session_state:
+    st.session_state.calcada_parway = "Não"
+if 'obs_metragem' not in st.session_state:
+    st.session_state.obs_metragem = "Sim"
+if 'obs_poda' not in st.session_state:
+    st.session_state.obs_poda = "Não"
+
+
+
 with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
     
 
 
     # --- Perguntas do Resumo Final ---
     
-    st.write("##### 1) Existe rampa (cunha) na entrada de veículos?")
-    st.radio("Selecione uma opção:", options=['Sim', 'Não'], key='rampa', horizontal=True)
-
-    st.write("##### 2) Existe telhado em área pública?")
-    st.radio("Selecione uma opção:", options=['Sim', 'Não'], key='telhado', horizontal=True)
+    st.radio("**1) Existe rampa (cunha) na entrada de veículos?**", options=['Sim', 'Não'], key='rampa', horizontal=True)
+    st.radio("**2) Existe telhado em área pública?**", options=['Sim', 'Não'], key='telhado', horizontal=True)
+    st.radio("**3) Falta Placa de Endereçamento?**", options=['Sim', 'Não'], key='endereco', horizontal=True)
+    st.radio("**4) Área impermeável onde foi previsto permabilidade?**", options=['Sim', 'Não'], key='obs_area_verde', horizontal=True) 
+    st.radio("**5) Falta calçada ou está irregular?**", options=['Sim', 'Não'], key='falta_calcada', horizontal=True) 
 
     st.divider()
 
     # --- Campo de Observações (Seleção única) ---
-    st.subheader("Observações Adicionais")
+    st.subheader("Observações")
     
     opcoes_obs = {
-        None: "Nenhuma observação adicional",
         "Art 151": "Trata-se de processo de Habite-se de Regularização, conforme ATESTADO DE HABILITAÇÃO DE REGULARIZAÇÃO, embasado no ART.151 da LEI Nº 6.138/18, sendo, portanto, a vistoria restrita à verificação da consonância do imóvel executado com o licenciado através do projeto de arquitetura visado.",
         "Art 153": "Trata-se de processo de Habite-se de Regularização, conforme ATESTADO DE HABILITAÇÃO DE REGULARIZAÇÃO, embasado no ART.153 da LEI Nº 6.138/18, sendo, portanto, a vistoria restrita à verificação da consonância do imóvel executado com o licenciado através do projeto de arquitetura depositado. Obra comprovadamente concluída há mais de cinco anos. Indevida a cobrança da Taxa de Execução de Obras - TEO. Parecer técnico UREC/DF LEGAL de 05/10/2020 - Processo SEI 04017-00015495/2020-87",
         "Alvará 7 dias": "Vistoria restrita à verificação da consonância do imóvel executado com o licenciado pelo Alvará de Construção supracitado, referente ao projeto de arquitetura depositado conforme Termo de Responsabilidade e Cumprimento de Normas, TRCN, com base na Lei 6.412/2019 e Decreto 40.302/2019",
@@ -1274,7 +1360,15 @@ with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
         format_func=lambda x: x if x else "Nenhuma",
         key='observacoes_selecionadas'
     )
-    
+
+    st.radio("Nota Técnica para as calçadas do Park Way, Chácaras do Lago Sul, SMDB e SMLN", options=['Sim', 'Não'], key='calcada_parway', horizontal=True) 
+    st.radio("Nota Técnica para as calçadas do Condomínio Verde do JB", options=['Sim', 'Não'], key='calcada_verde', horizontal=True) 
+    st.radio("Nota sobre a Metragem do imóvel", options=['Sim', 'Não'], key='obs_metragem', horizontal=True)  
+    st.radio("Nota sobre poda de árvore", options=['Sim', 'Não'], key='obs_poda', horizontal=True)  
+    st.radio("Nota sobre calçada", options=['Sim', 'Não'], key='calcada_pequena', horizontal=True) 
+ 
+ 
+
     st.divider()
 
     # --- Campo Livre ---
@@ -1297,25 +1391,63 @@ with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
         
         # --- Lógica de geração do resumo e observações ---
         resumo_final = []
-        observacoes_final = ""
+        observacoes_final = []
         
         if st.session_state.rampa == "Sim":
-            resumo_final.append("O responsável deverá demolir a rampa (cunha) instalada no acesso aos veículos invadindo a pista de rolamento.")
+            resumo_final.append("O responsável deverá demolir a rampa (cunha) instalada no acesso aos veículos invadindo a pista de rolamento. Art. 10 inciso VI do Decreto 38047/2017.")
         
         if st.session_state.telhado == "Sim":
-            resumo_final.append("O telhado está ultrapassando o limite do lote. O interessado deverá retirar a parte do telhado que avança sobre área pública e providenciar a devida coleta da água pluvial de modo a não lança-la diretamente no passeio (calçada).")
+            resumo_final.append("O telhado está ultrapassando o limite do lote. O interessado deverá retirar a parte do telhado que avança sobre área pública e providenciar a devida coleta da água pluvial de modo a não lança-la diretamente no passeio (calçada). Art. 62, inciso III, da Lei nº 6.138/2018, - a edificação não extrapole os limites do lote ou da projeção -.")
         
+        if st.session_state.endereco == "Sim":
+            resumo_final.append("Não consta placa de endereçamento. De acordo com o Art. 163 do Descreto Nº 43.056, DE 03 DE MARÇO DE 2022, na vistoria para subsidiar a emissão da carta de habite-se ou do atestado de conclusão, deve-se verificar: a instalação de placa de endereçamento legível, quando exigível.")
+        
+        if st.session_state.obs_area_verde == "Sim":
+            resumo_final.append("Foi constado que existe área impermeável (calçada) nos locais indicados, no projeto arquitetônico, onde era previsto área permeável. De acordo com o Art. 163 do Descreto Nº 43.056, DE 03 DE MARÇO DE 2022, os parâmetros urbanísticos do projeto habilitado ou depositado a serem observados são: XII - taxa de permeabilidade ou de área verde")
+        
+        if st.session_state.falta_calcada == "Sim":
+            resumo_final.append("A largura mínima das rotas acessíveis deve ser de 1,20 m, admitindo-se redução pontual para até 0,90 m, limitada a trechos com extensão máxima de 0,80 m, conforme a NBR 9050. A calçada deverá ainda possuir superfície antiderrapante, com piso regular, na altura do meio-fio e de forma contínua, sem interrupção do passeio para o acesso de veículos para a garagem, e com inclinação transversal máxima de 3%.")
+        
+
+
+
+
         if st.session_state.texto_livre:
             resumo_final.append(st.session_state.texto_livre)
+
+
+
             
         if st.session_state.observacoes_selecionadas:
-            observacoes_final = opcoes_obs[st.session_state.observacoes_selecionadas]
+            # Use .append() para adicionar o valor à lista
+            observacoes_final.append(opcoes_obs[st.session_state.observacoes_selecionadas])
+
+        if st.session_state.calcada_parway == "Sim":
+            observacoes_final.append("De acordo com a Nota Técnica N°1/2025-DF LEGAL/ SECEX/ UACESS, para obras em unidades de lotes no Park Way, Chácaras do Lago Sul, SMDB e SMLN, os itens 18.i e 18.j da NGB 118/97 e 18.n da NGB 161/98 foram revogados pela LUOS, passando a responsabilidade da execução da área comum (inclusive calçada) para o Condomínio, conforme estabelecido no Código de Obras e Edificações do Distrito Federal e na Convenção e Instituição de Condomínio de cada lote específico. Portanto, as calçadas internas ao lote não serão cobradas da última unidade quando da solicitação da Vistoria de Habite-se.")
+
+        if st.session_state.calcada_verde == "Sim":
+            observacoes_final.append("De acordo com a Nota Técnica nº.30/2023-DF-LEGAL/SUOB/COFIS/DIACESS, de 17/03/2023, o Condomínio Verde será responsável por executar ou reconstruir, no final da obra de urbanização, todas as calçadas contíguas às testadas dos lotes, conforme determina o inciso VIII, do artigo 15, da Lei nº 6.138/2018, atendendo à acessibilidade das áreas comuns e áreas lindeiras.")
+
+        if st.session_state.obs_metragem == "Sim":
+            observacoes_final.append("Ressaltamos que a área construída é declarada pelo Responsável Técnico, não cabendo a esta fiscalização afirmar se a área construída está correta em sua metragem final. ")
+
+        if st.session_state.obs_poda == "Sim":
+            observacoes_final.append("Este laudo não constitui autorização para poda ou supressão de árvores.")
+
+        if st.session_state.calcada_pequena == "Sim":
+            observacoes_final.append("O passeio externo foi objeto de verificação parcial desta vistoria, uma vez que a calçada não apresenta a largura mínima exigida para a aplicação integral da NBR 9050, conforme entendimento manifestado em Nota Técnica DIACESS/SUOB/DF LEGAL, de 28 de setembro de 2020. ")
+
+
+
+
+        # Após adicionar todos os itens à lista, você pode juntá-los em uma única string, se necessário
+        observacoes_final_str = " ".join(observacoes_final)
         
         # --- Exibição do Resumo ---
         relatorio_texto = ""
-        st.markdown("### Resumo Final")
+        st.markdown("### Pendências")
         if resumo_final:
-            relatorio_texto += "Resumo Final:\n\n"
+            relatorio_texto += "Pendências:\n\n"
             for item in resumo_final:
                 st.write(f"- {item}")
                 relatorio_texto += f"- {item}\n"
@@ -1324,9 +1456,9 @@ with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
         
         # --- Exibição das Observações ---
         st.markdown("### Observações")
-        if observacoes_final:
-            st.write(observacoes_final)
-            relatorio_texto += "\n\nObservações:\n\n" + observacoes_final
+        if observacoes_final_str:
+            st.write(observacoes_final_str)
+            relatorio_texto += "\n\nObservações:\n\n" + observacoes_final_str
         else:
             st.info("Nenhuma observação adicional foi selecionada.")
 
@@ -1337,20 +1469,39 @@ with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
 
         # Botão para gerar e baixar o PDF
         with col1: # Usando a primeira coluna
-            def create_pdf(text):
-                pdf = fpdf.FPDF()
-                pdf.add_page()
-                pdf.set_font("Arial", size=12)
-                
-                # Configurações para quebra de linha
-                pdf.multi_cell(0, 10, txt=text)
-                
-                return pdf.output(dest='S').encode('latin-1')
 
-            pdf_content = create_pdf(relatorio_texto)
+            def create_pdf(text_content):
+                pdf = FPDF()
+                pdf.add_page()
+                
+                # Adicionar título
+                pdf.set_font("helvetica", 'B', 16)
+                pdf.cell(text="Relatório de Vistoria", center=True)
+                pdf.ln(10)
+                
+                # Adicionar data
+                pdf.set_font("helvetica", 'I', 12)
+                pdf.cell(text=f"Data: {date.today()}", align="R")
+                pdf.ln(15)
+                
+                # Conteúdo principal
+                pdf.set_font("helvetica", size=12)
+                pdf.multi_cell(0, 10, text_content)  # Usando text= diretamente
+                
+                return pdf.output()
+
+            # Gerar PDF
+            pdf_output = create_pdf(relatorio_texto)
+            
+            # Garantir que seja bytes
+            if isinstance(pdf_output, str):
+                pdf_bytes = pdf_output.encode('latin-1')
+            else:
+                pdf_bytes = bytes(pdf_output) if isinstance(pdf_output, bytearray) else pdf_output
+            
             st.download_button(
                 label="📥 Gerar PDF",
-                data=pdf_content,
+                data=pdf_bytes,
                 file_name=f"relatorio_vistoria_{date.today()}.pdf",
                 mime="application/pdf"
             )

@@ -3,14 +3,8 @@ import requests
 from pyproj import Transformer
 import folium
 from streamlit_folium import st_folium
-import fpdf # Importa a biblioteca para gerar PDF
-import base64 # Para fazer o download do PDF
-import io # Para manipular o PDF em memória
 from datetime import date
-import html
-from fpdf import FPDF
 
-import urllib.parse  # Para evitar problemas com caracteres especiais
 import pandas as pd
 from pyproj import Transformer
 import time
@@ -1470,38 +1464,40 @@ with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
         # Botão para gerar e baixar o PDF
         with col1: # Usando a primeira coluna
 
-            def create_pdf(text_content):
-                pdf = FPDF()
-                pdf.add_page()
+            def create_txt(resumo, observacoes):
+        # Criar conteúdo do texto formatado
+                txt_content = f"RELATÓRIO DE VISTORIA\n"
+                txt_content += f"Data: {date.today()}\n"
+                txt_content += "=" * 60 + "\n\n"
                 
-                # Adicionar título
-                pdf.set_font("helvetica", 'B', 16)
-                pdf.cell(text="Relatório de Vistoria", center=True)
-                pdf.ln(10)
+                # Seção de Pendências
+                if resumo:
+                    txt_content += "PENDÊNCIAS:\n"
+                    txt_content += "-" * 30 + "\n"
+                    for item in resumo:
+                        txt_content += f"• {item}\n"
+                    txt_content += "\n"
+                else:
+                    txt_content += "PENDÊNCIAS: Nenhuma pendência identificada.\n\n"
                 
-                # Adicionar data
-                pdf.set_font("helvetica", 'I', 12)
-                pdf.cell(text=f"Data: {date.today()}", align="R")
-                pdf.ln(15)
+                # Seção de Observações
+                if observacoes:
+                    txt_content += "OBSERVAÇÕES:\n"
+                    txt_content += "-" * 30 + "\n"
+                    for obs in observacoes:
+                        txt_content += f"{obs}\n\n"
+                else:
+                    txt_content += "OBSERVAÇÕES: Nenhuma observação adicional.\n"
                 
-                # Conteúdo principal
-                pdf.set_font("helvetica", size=12)
-                pdf.multi_cell(0, 10, text_content)  # Usando text= diretamente
-                
-                return pdf.output()
+                return txt_content
 
-            # Gerar PDF
-            pdf_output = create_pdf(relatorio_texto)
-            
-            # Garantir que seja bytes
-            if isinstance(pdf_output, str):
-                pdf_bytes = pdf_output.encode('latin-1')
-            else:
-                pdf_bytes = bytes(pdf_output) if isinstance(pdf_output, bytearray) else pdf_output
+            # Gerar conteúdo do TXT
+            txt_content = create_txt(resumo_final, observacoes_final)
             
             st.download_button(
-                label="📥 Gerar PDF",
-                data=pdf_bytes,
-                file_name=f"relatorio_vistoria_{date.today()}.pdf",
-                mime="application/pdf"
+                label="📥 Gerar TXT",
+                data=txt_content,
+                file_name=f"relatorio_vistoria_{date.today()}.txt",
+                mime="text/plain",
+                help="Clique para baixar o relatório em formato texto"
             )

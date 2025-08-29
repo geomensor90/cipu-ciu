@@ -3,5 +3,5 @@ requests
 pyproj
 folium
 streamlit-folium
-fpdf
 pandas
+

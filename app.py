@@ -4,7 +4,6 @@ from pyproj import Transformer
 import folium
 from streamlit_folium import st_folium
 from datetime import date
-
 import pandas as pd
 from pyproj import Transformer
 import time
@@ -22,9 +21,25 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
         st.session_state.lotes_geojson = None
     if "pontos_geojson" not in st.session_state:
         st.session_state.pontos_geojson = None
-
     if "clicked_point" not in st.session_state:
         st.session_state.clicked_point = default_point
+
+
+    # --- Mostrar botão "Carregar coordenada CIPU" ---
+    # --- Mostrar botão "Carregar coordenada CIPU" ---
+    if st.button("Carregar coordenada CIPU"):
+        if "map_coords_list" in st.session_state and st.session_state.map_coords_list:
+            selected_coords = st.session_state.map_coords_list[st.session_state.selected_feature_index]
+            if selected_coords:
+                st.session_state.clicked_point = selected_coords
+                current_lat, current_lon = selected_coords
+                st.session_state.msg = f"✅ Coordenada CIPU carregada: {current_lat:.6f}, {current_lon:.6f}"
+        else:
+            st.session_state.msg = "⚠️ Primeiro busque um CIPU no Parâmetros Urbanísticos."
+
+    # Exibe mensagem persistente
+    if "msg" in st.session_state:
+        st.info(st.session_state.msg)
 
     # Get the current latitude and longitude from session state
     current_lat, current_lon = st.session_state.clicked_point
@@ -32,6 +47,7 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
     # Manual input for coordinates (pre-filled with current_lat, current_lon)
     lat_input = st.number_input("Latitude", value=current_lat, format="%.6f")
     lon_input = st.number_input("Longitude", value=current_lon, format="%.6f")
+
 
     # If manual inputs change, update the clicked_point
     if (lat_input, lon_input) != st.session_state.clicked_point:
@@ -63,6 +79,8 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
         fill_opacity=0.01,
         tooltip="Raio 50m"
     ).add_to(mapa)
+    
+   
 
     # --- Camadas GeoJSON ---
 
@@ -104,8 +122,11 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
     # Adiciona controle de camadas
     folium.LayerControl().add_to(mapa)
 
+
     # Display the map and capture clicks
     map_data = st_folium(mapa, height=600, width=900)
+
+
 
     # Update coordinates if the map was clicked
     if map_data and map_data["last_clicked"]:
@@ -178,7 +199,6 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
             st.error(f"❌ Erro na consulta ao serviço de pontos: {e}")
         except ValueError:
             st.error("❌ Erro ao decodificar a resposta JSON.")
-
 
 
 # Use um expander para "esconder" o formulário de busca
@@ -1106,16 +1126,8 @@ if st.session_state.all_general_data:
             else:
                 st.warning("Nenhuma cota de soleira encontrada para este lote.")
 
-
-
     # # # # # # # # # # # # 
 
-
-
-
-
-
-    # --- Botão para carregar o Mapa ---
     # --- Botão para carregar o Mapa ---
     if st.button("**Carregar Mapa**"):
         st.session_state.show_map = True

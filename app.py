@@ -1158,6 +1158,49 @@ if st.session_state.all_general_data:
             show=False  # Desligado por padrão
         ).add_to(m)
 
+        ##############apagar daqui
+
+        url_template_2022 = (
+            "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/44873/{z}/{y}/{x}"
+        )
+        url_template_2023 = (
+            "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/56450/{z}/{y}/{x}"
+        )
+
+        folium.TileLayer(
+            tiles=url_template_2022,
+            attr="World Imagery Wayback 2022",
+            name="2022",
+            overlay=True,
+            control=True
+        ).add_to(m)
+
+        folium.TileLayer(
+            tiles=url_template_2023,
+            attr="World Imagery Wayback 2023",
+            name="2023",
+            overlay=True,
+            control=True
+        ).add_to(m)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         # Adiciona o polígono do lote selecionado
         selected_geometry = selected_data.get("geometry")

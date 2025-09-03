@@ -1556,3 +1556,63 @@ with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
                 mime="text/plain",
                 help="Clique para baixar o relatório em formato texto"
             )
+
+
+
+
+def consultar_cipu(cipu):
+    api_url = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CADASTRO_TERRITORIAL/FeatureServer/10/query"
+    params = {
+        "where": f"pu_cipu = {int(cipu)}",
+        "outFields": "pu_cipu,x,y",
+        "returnGeometry": "true",
+        "f": "json"
+    }
+    r = requests.get(api_url, params=params).json()
+    results = []
+    for f in r.get("features", []):
+        x, y = f["attributes"].get("x"), f["attributes"].get("y")
+        if x and y:
+            lon, lat = transformer.transform(x, y)
+            results.append({
+                "cipu": f["attributes"]["pu_cipu"],
+                "lat": round(lat, 6),
+                "lon": round(lon, 6)
+            })
+    return results
+
+def gerar_kml(dados):
+    kml = ['<?xml version="1.0" encoding="UTF-8"?>',
+           '<kml xmlns="http://www.opengis.net/kml/2.2">',
+           '<Document>']
+    for d in dados:
+        cipu_str = str(int(d['cipu']))  # <<< garante sem casas decimais
+        kml.append(f"""
+        <Placemark>
+          <name>{cipu_str}</name>
+          <Point>
+            <coordinates>{d['lon']},{d['lat']},0</coordinates>
+          </Point>
+        </Placemark>
+        """)
+    kml.append("</Document></kml>")
+    return "\n".join(kml)
+
+with st.expander("**Exportar lista CIPU para Google Earth**", expanded=False):
+    # --- Interface Streamlit ---
+
+    cipu_list = st.text_area("Insira uma lista de CIPUs (um por linha)").splitlines()
+
+    if st.button("Consultar coordenadas"):
+        todos = []
+        for c in cipu_list:
+            if c.strip().isdigit():
+                todos.extend(consultar_cipu(c.strip()))
+        st.session_state["cipu_coords"] = todos
+        st.success(f"{len(todos)} coordenadas obtidas!")
+
+    if "cipu_coords" in st.session_state and st.session_state["cipu_coords"]:
+        #st.write(st.session_state["cipu_coords"])
+        if st.button("Exportar para KML"):
+            kml = gerar_kml(st.session_state["cipu_coords"])
+            st.download_button("Baixar KML", kml, file_name="cipu_export.kml")

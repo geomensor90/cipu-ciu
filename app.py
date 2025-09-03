@@ -1598,7 +1598,7 @@ def gerar_kml(dados):
     kml.append("</Document></kml>")
     return "\n".join(kml)
 
-with st.expander("**Exportar lista CIPU para Google Earth**", expanded=False):
+with st.expander("**Exportar lista CIPU para Google Earth e Google Maps**", expanded=False):
     # --- Interface Streamlit ---
 
     cipu_list = st.text_area("Insira uma lista de CIPUs (um por linha)").splitlines()
@@ -1628,3 +1628,11 @@ with st.expander("**Exportar lista CIPU para Google Earth**", expanded=False):
 
         # Mostrar tabela
         st.dataframe(df, use_container_width=True)
+    def gerar_link_google_maps(dados):
+        base_url = "https://www.google.com/maps/dir/"
+        coords = [f"{d['lat']},{d['lon']}" for d in dados]
+        return base_url + "/".join(coords)
+
+    if "cipu_coords" in st.session_state and st.session_state["cipu_coords"]:
+        link = gerar_link_google_maps(st.session_state["cipu_coords"])
+        st.markdown(f"📍 [Abrir rota no Google Maps]({link})", unsafe_allow_html=True)

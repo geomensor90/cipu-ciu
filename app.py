@@ -8,7 +8,7 @@ import pandas as pd
 from pyproj import Transformer
 import time
 
-
+st.set_page_config(page_title="Ferramentas para HBT", page_icon="🌍")
 # busca pelo mapa
 with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
     # Ponto padrão em Brasília
@@ -1613,6 +1613,18 @@ with st.expander("**Exportar lista CIPU para Google Earth**", expanded=False):
 
     if "cipu_coords" in st.session_state and st.session_state["cipu_coords"]:
         #st.write(st.session_state["cipu_coords"])
-        if st.button("Exportar para KML"):
+        if st.button("Exportar para KML", type="primary"):
             kml = gerar_kml(st.session_state["cipu_coords"])
             st.download_button("Baixar KML", kml, file_name="cipu_export.kml")
+    if "cipu_coords" in st.session_state and st.session_state["cipu_coords"]:
+
+        # Criar DataFrame organizado
+        df = pd.DataFrame(st.session_state["cipu_coords"])
+        df["cipu"] = df["cipu"].astype(int)  # garante que não aparece 123.0
+
+        # Coluna extra com coordenada já no formato "lat, lon"
+        df["coordenada"] = df["lat"].astype(str) + ", " + df["lon"].astype(str)
+
+
+        # Mostrar tabela
+        st.dataframe(df, use_container_width=True)

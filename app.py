@@ -2,11 +2,17 @@ import streamlit as st
 import requests
 from pyproj import Transformer
 import folium
-from streamlit_folium import st_folium
+from streamlit_folium import st_folium, folium_static
 from datetime import date
 import pandas as pd
 from pyproj import Transformer
 import time
+from math import sqrt
+import json
+import numpy as np
+from scipy import interpolate
+import plotly.express as px
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="Ferramentas para HBT", page_icon="🌍")
 # busca pelo mapa
@@ -702,16 +708,26 @@ if st.session_state.all_general_data:
                             if "results" in job_info:
                                 for key, val in job_info["results"].items():
                                     if key == "arquivo":
-                                        result_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/certidaoparametrosurb/GPServer/certidao_parametros_urb/jobs/{job_id}/{val['paramUrl']}?f=json"
+                                        result_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/GerarVertices/GPServer/GerarVertices/jobs/{job_id}/{val['paramUrl']}?f=json"
                                         result = requests.get(result_url).json()
-                                        pdf_url = result.get("value")
-                            
-                            if not pdf_url:
-                                st.warning("Link para o PDF não encontrado.")
+                                        value = result.get("value")
+
+                                        # Se for link direto (caso da certidão), usa como está
+                                        if value and value.startswith("http"):
+                                            file_url = value
+                                        # Se for apenas o nome do arquivo (caso do GerarVertices), monta a URL no diretório de jobs
+                                        elif value:
+                                            file_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/directories/arcgisjobs/geoprocessing/gerarvertices_gpserver/{job_id}/scratch/{value}"
+                                        else:
+                                            file_url = None
+
+                            if not file_url:
+                                st.warning("Link do arquivo não encontrado.")
                                 st.stop()
-                            
-                            st.subheader("📄 Certidão Gerada")
-                            st.markdown(f"[Clique aqui para abrir o PDF]({pdf_url})", unsafe_allow_html=True)
+
+                            st.subheader("📂 Arquivo Gerado")
+                            st.markdown(f"[Clique aqui para baixar]({file_url})", unsafe_allow_html=True)
+
 
 
 
@@ -1158,7 +1174,45 @@ if st.session_state.all_general_data:
             show=False  # Desligado por padrão
         ).add_to(m)
 
-        ##############apagar daqui
+
+        # Adiciona a 2021_50CM
+        wms_layer = folium.raster_layers.WmsTileLayer(
+            url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Imagens/2021_50CM/ImageServer/WMSServer",
+            name="2021 - GeoPortal",
+            layers="0",
+            fmt="image/png",
+            transparent=True,
+            max_zoom=21,
+            attr="IDE-DF / GeoServiços",
+            show=False  # Mude para True se quiser que carregue por padrão
+        )
+        wms_layer.add_to(m)
+
+        # Adiciona 2016
+        wms_layer = folium.raster_layers.WmsTileLayer(
+            url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Imagens/FOTO_2016/ImageServer/WMSServer",
+            name="2016 - GeoPortal",
+            layers="0",
+            fmt="image/png",
+            transparent=True,
+            max_zoom=21,
+            attr="IDE-DF / GeoServiços",
+            show=False  # Mude para True se quiser que carregue por padrão
+        )
+        wms_layer.add_to(m)
+
+        # Adiciona 2017
+        wms_layer = folium.raster_layers.WmsTileLayer(
+            url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Imagens/PLEIADES_2017/ImageServer/WMSServer",
+            name="2017 - GeoPortal",
+            layers="0",
+            fmt="image/png",
+            transparent=True,
+            max_zoom=21,
+            attr="IDE-DF / GeoServiços",
+            show=False  # Mude para True se quiser que carregue por padrão
+        )
+        wms_layer.add_to(m)
 
         url_template_2022 = (
             "https://wayback.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/44873/{z}/{y}/{x}"
@@ -1170,36 +1224,22 @@ if st.session_state.all_general_data:
         folium.TileLayer(
             tiles=url_template_2022,
             attr="World Imagery Wayback 2022",
-            name="2022",
+            name="2022 - Arcgis",
             overlay=True,
-            control=True
+            max_zoom=21,
+            control=True,
+            show=False
         ).add_to(m)
 
         folium.TileLayer(
             tiles=url_template_2023,
             attr="World Imagery Wayback 2023",
-            name="2023",
+            name="2023 - Arcgis",
             overlay=True,
-            control=True
+            max_zoom=21,
+            control=True,
+            show=False
         ).add_to(m)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         # Adiciona o polígono do lote selecionado
@@ -1598,10 +1638,10 @@ def gerar_kml(dados):
     kml.append("</Document></kml>")
     return "\n".join(kml)
 
-with st.expander("**Exportar lista CIPU para Google Earth e Google Maps**", expanded=False):
+with st.expander("**Exportar lista CIPU para Google Earth e Google**", expanded=False):
     # --- Interface Streamlit ---
 
-    cipu_list = st.text_area("Insira uma lista de CIPUs (um por linha)").splitlines()
+    cipu_list = st.text_area("Insira uma lista de CIPUs (Um por linha - Dê ENTER após inserir cada um)").splitlines()
 
     if st.button("Consultar coordenadas"):
         todos = []
@@ -1636,3 +1676,374 @@ with st.expander("**Exportar lista CIPU para Google Earth e Google Maps**", expa
     if "cipu_coords" in st.session_state and st.session_state["cipu_coords"]:
         link = gerar_link_google_maps(st.session_state["cipu_coords"])
         st.markdown(f"📍 [Abrir rota no Google Maps]({link})", unsafe_allow_html=True)
+
+
+
+
+
+
+
+
+
+
+
+
+###perfil
+with st.expander("**Perfil de elevação**", expanded=False):
+    st.write("Clique no Primeiro ponto para definir o início do Perfil 🟢")
+    st.write("Clique no Segundo ponto para definir o início do Perfil 🔵")    
+    st.write("Depois clique em --Gerar Perfil--")
+
+    # --- Configurações da API ---
+    REST_URL = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/Profile1m/GPServer/Profile/execute"
+
+    # Inicializa o estado da sessão
+    if 'points' not in st.session_state:
+        st.session_state.points = []
+    if 'skip_append' not in st.session_state:
+        st.session_state.skip_append = False
+    if 'zoom_level' not in st.session_state:
+        st.session_state.zoom_level = 14
+    # Novo estado para a geometria do lote no mapa de perfil
+    if 'cipu_geojson' not in st.session_state:
+        st.session_state.cipu_geojson = None
+
+    # --- Função para limpar pontos ---
+    #def clear_points():
+     #   st.session_state.points = []
+      #  st.session_state.skip_append = True
+       # st.session_state.cipu_geojson = None  # Limpa a geometria do lote também
+        #st.rerun()
+
+    # Configuração inicial do centro e zoom
+    if not st.session_state.points:
+        map_center = [-15.779774, -47.925562]
+    else:
+        last_point = st.session_state.points[-1]
+        map_center = [last_point[1], last_point[0]]
+
+    # Cria o mapa principal (único) do perfil de elevação
+    m_perfil = folium.Map(location=map_center, zoom_start=st.session_state.zoom_level, tiles="Esri.WorldImagery", max_zoom=19)
+
+    # Adiciona o cursor crosshair personalizado
+    m_perfil.get_root().header.add_child(
+        folium.Element("""
+        <style>
+        .leaflet-container {
+            cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='none' stroke='red' stroke-width='2'/><line x1='16' y1='0' x2='16' y2='8' stroke='red' stroke-width='2'/><line x1='16' y1='24' x2='16' y2='32' stroke='red' stroke-width='2'/><line x1='0' y1='16' x2='8' y2='16' stroke='red' stroke-width='2'/><line x1='24' y1='16' x2='32' y2='16' stroke='red' stroke-width='2'/></svg>") 16 16, crosshair !important;
+        }
+        </style>
+        """)
+    )
+
+    # Se já houver pontos, desenha-os no mapa
+    if st.session_state.points:
+        if len(st.session_state.points) > 1:
+            folium.PolyLine(
+                locations=[(lat, lon) for lon, lat in st.session_state.points],
+                color="red",
+                weight=3,
+                opacity=0.8
+            ).add_to(m_perfil)
+        
+        for i, (lon, lat) in enumerate(st.session_state.points):
+            if i == 0:
+                folium.CircleMarker(
+                    location=[lat, lon],
+                    radius=3,                 # tamanho do ponto
+                    color="green",            # cor da borda
+                    fill=True,
+                    fill_color="green",
+                    fill_opacity=1,
+                    popup="Início"
+                ).add_to(m_perfil)
+            elif i == len(st.session_state.points) - 1:
+                folium.CircleMarker(
+                    location=[lat, lon],
+                    radius=3,
+                    color="blue",
+                    fill=True,
+                    fill_color="blue",
+                    fill_opacity=1,
+                    popup="Fim"
+                ).add_to(m_perfil)
+            else:
+                folium.CircleMarker(
+                    location=[lat, lon],
+                    radius=3,
+                    color="gray",
+                    fill=True,
+                    fill_color="gray",
+                    fill_opacity=1,
+                    popup=f"Ponto {i+1}"
+                ).add_to(m_perfil)
+
+    # --- Adiciona a geometria do lote ao mapa, se existir no estado da sessão ---
+    # --- Adiciona a geometria do lote ao mapa, se existir no estado da sessão ---
+    if st.session_state.cipu_geojson:
+    # Adiciona o polígono
+        gj = folium.GeoJson(
+            st.session_state.cipu_geojson,
+            style_function=lambda feature: {
+                "fillColor": "cyan",
+                "color": "cyan",
+                "weight": 3,
+                "fillOpacity": 0.01,
+                "pointer-events": "none"
+            },
+            interactive=False
+        ).add_to(m_perfil)
+
+        # Ajusta mapa para caber todo o polígono
+        coords = st.session_state.cipu_geojson['geometry']['coordinates'][0]
+        lats = [pt[1] for pt in coords]
+        lons = [pt[0] for pt in coords]
+        m_perfil.fit_bounds([[min(lats), min(lons)], [max(lats), max(lons)]])
+
+
+    # Renderiza o mapa - ESTA LINHA DEFINE map_state
+    map_state = st_folium(m_perfil, width=700, height=500, key="map")
+    
+    # Botão para carregar o lote no mapa de perfil
+    # Botão para carregar o lote no mapa de perfil
+    if st.button("Carregar o Lote a Partir do CIPU"):
+        # Obtém os dados do resultado selecionado
+        all_data = st.session_state.get("all_general_data")
+        idx = st.session_state.get("selected_feature_index")
+
+        if all_data and idx is not None and 0 <= idx < len(all_data):
+            selected_data = all_data[idx]
+            selected_geometry = selected_data.get("geometry")
+
+            if selected_geometry and selected_geometry.get('rings'):
+                transformed_rings = []
+                for ring in selected_geometry.get('rings'):
+                    transformed_ring = []
+                    for x, y in ring:
+                        # Converte de Web Mercator (x, y) para Lat, Lon
+                        lat, lon = transformer.transform(x, y)
+                        transformed_ring.append([lat, lon]) # O folium espera [lat, lon]
+                    transformed_rings.append(transformed_ring)
+
+                # Cria a feature GeoJSON e salva no estado da sessão
+                geojson_feature = {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [transformed_rings[0]]
+                    }
+                }
+                st.session_state.cipu_geojson = geojson_feature
+            
+            # Re-executa o script para redesenhar o mapa com a nova geometria
+            st.rerun()
+        else:
+            st.warning("Carregue um CIPU primeiro e depois clique no botão.")
+
+
+#############################################
+#############################################
+#############################################
+    # --- Clique no mapa ---
+    # --- Clique no mapa --- (AGORA COM ATUALIZAÇÃO DE ZOOM)
+    if map_state and "last_clicked" in map_state and map_state["last_clicked"]:
+        new_point = (map_state["last_clicked"]['lng'], map_state["last_clicked"]['lat'])
+        
+        # ATUALIZA O ZOOM APENAS QUANDO HOUVER CLIQUE
+        if map_state and "zoom" in map_state:
+            st.session_state.zoom_level = map_state["zoom"]
+        
+        if not st.session_state.skip_append:
+            if not st.session_state.points or new_point != st.session_state.points[-1]:
+                st.session_state.points.append(new_point)
+                st.rerun()
+        else:
+            st.session_state.skip_append = False  # reseta flag após limpar
+
+    # --- Lista de pontos ---
+    #st.subheader("Pontos da Linha")
+    #if st.session_state.points:
+    #    for i, point in enumerate(st.session_state.points):
+    #        st.write(f"Ponto {i+1}: Lon={point[0]:.6f}, Lat={point[1]:.6f}")
+
+    # Botão de limpar
+    #st.button("Limpar todos os Pontos", on_click=clear_points)
+
+
+    if st.button("Gerar Perfil"):
+        if len(st.session_state.points) < 2:
+            st.error("Por favor, selecione pelo menos dois pontos no mapa para gerar o perfil.")
+        else:
+            try:
+                # Formato correto para a API do ArcGIS
+                geometry_json = {
+                    "geometryType": "esriGeometryPolyline",
+                    "features": [
+                        {
+                            "geometry": {
+                                "paths": [st.session_state.points],
+                                "spatialReference": {"wkid": 4326}
+                            }
+                        }
+                    ]
+                }
+                
+                params = {
+                    "InputLineFeatures": json.dumps(geometry_json),
+                    "DEMResolution": "FINEST",
+                    "returnZ": "true",
+                    "f": "json"
+                }
+
+                st.info("Buscando o perfil de elevação...")
+                
+                response = requests.post(REST_URL, data=params)
+                response_json = response.json()
+
+                # Verificar se a resposta contém resultados
+                if response_json.get("results"):
+                    result = response_json["results"][0]["value"]
+                    
+                    if isinstance(result, str):
+                        # Tentar parsear se for string JSON
+                        try:
+                            result = json.loads(result)
+                        except:
+                            st.error("Formato de resposta inválido da API")
+                            st.stop()
+                    
+                    if "features" in result and result["features"]:
+                        feature = result["features"][0]
+                        
+                        # Verificar diferentes formatos possíveis
+                        if "geometry" in feature and "paths" in feature["geometry"]:
+                            profile_points = feature["geometry"]["paths"][0]
+                            
+                            if len(profile_points[0]) >= 3:
+                                # Processar dados de elevação
+                                df = pd.DataFrame(profile_points, columns=['lon', 'lat', 'elevation'])
+                                df['distance'] = 0.0
+                                
+                                # Calcular distâncias cumulativas
+                                for i in range(1, len(df)):
+                                    p1 = (df.loc[i-1, 'lon'], df.loc[i-1, 'lat'])
+                                    p2 = (df.loc[i, 'lon'], df.loc[i, 'lat'])
+                                    # Converter graus para metros (aproximadamente)
+                                    distance = sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2) * 111320
+                                    df.loc[i, 'distance'] = df.loc[i-1, 'distance'] + distance
+                                
+                                st.success("Perfil gerado com sucesso!")
+                                # Criar pontos interpolados para suavização extrema
+                                if len(df) > 10:
+                                    # Spline cúbica para suavização máxima
+                                    x_smooth = np.linspace(df['distance'].min(), df['distance'].max(), 1000)
+                                    
+                                    # Usar interpolação cúbica para suavização
+                                    cs = interpolate.CubicSpline(df['distance'], df['elevation'])
+                                    y_smooth = cs(x_smooth)
+                                    
+                                    # Criar gráfico com linha suavizada
+                                    fig = go.Figure()
+                                    
+                                    # Linha suavizada (principal)
+                                    fig.add_trace(go.Scatter(
+                                        x=x_smooth, 
+                                        y=y_smooth,
+                                        mode='lines',
+                                        name='Perfil',
+                                        line=dict(color='blue', width=3, shape='spline'),
+                                        hoverinfo='skip'
+                                    ))
+                                    
+                                    # Pontos originais (opcional, para referência)
+                                    fig.add_trace(go.Scatter(
+                                        x=df['distance'],
+                                        y=df['elevation'],
+                                        mode='markers',
+                                        name='Pontos GeoPortal',
+                                        marker=dict(color='red', size=4, opacity=0.6),
+                                        hoverinfo='text',
+                                        text=[f'Dist: {d:.1f}m<br>Elev: {e:.1f}m' for d, e in zip(df['distance'], df['elevation'])]
+                                    ))
+                                    
+                                else:
+                                    # Para poucos pontos, usar interpolação linear suavizada
+                                    fig = px.line(df, x='distance', y='elevation', 
+                                                labels={'distance': 'Distância (m)', 'elevation': 'Elevação (m)'}, 
+                                                title="Perfil de Elevação da Linha")
+                                    fig.update_traces(line=dict(shape='spline', smoothing=1.3, width=3))
+                                
+                                # Define a escala fixa para o eixo Y
+                                min_elevation = df['elevation'].min() - 5  # Margem inferior
+                                max_elevation = df['elevation'].max() + 5  # Margem superior
+
+                                # Configurações do layout com escala vertical FIXA
+                                fig.update_layout(
+                                    hovermode="x unified",
+                                    showlegend=True,
+                                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                                    xaxis_title="Distância (m)",
+                                    yaxis_title="Elevação (m)",
+                                    height=500,
+                                    yaxis=dict(
+                                        tickmode="linear",
+                                        tick0=0,
+                                        dtick=1,  # Marcadores de 1 em 1 metro
+                                        range=[min_elevation, max_elevation],  # ← ESCALA FIXA AQUI
+                                        showgrid=True,
+                                        gridwidth=1,
+                                        gridcolor="lightgray",
+                                        zeroline=True,
+                                        zerolinewidth=2,
+                                        zerolinecolor="gray"
+                                    )
+                                )
+                                
+                                st.plotly_chart(fig, use_container_width=True)
+                                
+                                # Estatísticas
+
+                                col1, col2, col3, col4 = st.columns(4)
+                                with col1:
+                                    st.metric("Elevação Mínima", f"{df['elevation'].min():.1f} m")
+                                with col2:
+                                    st.metric("Elevação Máxima", f"{df['elevation'].max():.1f} m")
+                                with col3:
+                                    st.metric("Desnível Total", f"{abs(df['elevation'].max() - df['elevation'].min()):.1f} m")
+                                with col4:
+                                    st.metric("Comprimento Total", f"{df['distance'].max():.1f} m")
+                                
+                                # Comprimento total
+                                
+                                
+                                
+                                # Mapa com a linha
+                                #st.subheader("Linha Traçada no Mapa")
+                                #map_center = [df['lat'].mean(), df['lon'].mean()]
+                                #m_result = folium.Map(location=map_center, zoom_start=14, tiles="cartodbpositron")
+                                #folium.PolyLine(locations=df[['lat', 'lon']].values.tolist(), color="red", weight=5, opacity=0.8).add_to(m_result)
+                                #folium.Marker(location=[df['lat'].iloc[0], df['lon'].iloc[0]], popup="Início", icon=folium.Icon(color='green')).add_to(m_result)
+                                #folium.Marker(location=[df['lat'].iloc[-1], df['lon'].iloc[-1]], popup="Fim", icon=folium.Icon(color='blue')).add_to(m_result)
+                                #folium_static(m_result)
+                                
+                                st.write("Download dos dados")
+                                csv = df.to_csv(index=False)
+                                st.download_button(
+                                    label="Download dos dados CSV",
+                                    data=csv,
+                                    file_name="perfil_elevacao.csv",
+                                    mime="text/csv"
+                                )
+                                
+                            else:
+                                st.error("Dados de elevação não retornados. Verifique as coordenadas.")
+                        else:
+                            st.error("Formato de geometria inválido na resposta da API")
+                    else:
+                        st.error("Nenhuma feature retornada pela API. Verifique as coordenadas.")
+                else:
+                    error_msg = response_json.get("error", {}).get("message", "Erro desconhecido")
+                    st.error(f"Erro ao obter o perfil: {error_msg}")
+                    
+            except Exception as e:
+                st.error(f"Ocorreu um erro: {str(e)}")

@@ -4,4 +4,6 @@ pyproj
 folium
 streamlit-folium
 pandas
-
+numpy
+scipy
+plotly

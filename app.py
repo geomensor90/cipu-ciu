@@ -7,12 +7,17 @@ from datetime import date
 import pandas as pd
 from pyproj import Transformer
 import time
-from math import sqrt
+from math import sqrt, radians, sin, cos, sqrt, atan2
 import json
 import numpy as np
 from scipy import interpolate
 import plotly.express as px
 import plotly.graph_objects as go
+import re
+import unicodedata
+import simplekml
+
+
 
 st.set_page_config(page_title="Ferramentas para HBT", page_icon="🌍")
 # busca pelo mapa
@@ -63,7 +68,7 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
     st.write(f"Coordenada atual: **{current_lat:.6f}, {current_lon:.6f}**")
 
     # Create a Folium map centered at the current_lat, current_lon
-    mapa = folium.Map(location=[current_lat, current_lon], zoom_start=18, tiles="Esri.WorldImagery", max_zoom=23)
+    mapa = folium.Map(location=[current_lat, current_lon], zoom_start=18, tiles="Esri.WorldImagery", max_zoom=25)
 
     # Add a marker for the selected point
     folium.CircleMarker(
@@ -84,6 +89,18 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
         fill=True,
         fill_opacity=0.01,
         tooltip="Raio 50m"
+    ).add_to(mapa)
+
+    # Adiciona a camada WMS dos lotes (desligada por padrão)
+    folium.raster_layers.WmsTileLayer(
+        url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Publico/CADASTRO_TERRITORIAL/MapServer/WMSServer",
+        name="Lotes Registrados",
+        layers="6",
+        fmt="image/png",
+        transparent=True,
+        max_zoom=23,
+        attr="GDF / GeoServiços",
+        show=False  # Desligado por padrão
     ).add_to(mapa)
     
    
@@ -124,13 +141,13 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
         ).add_to(mapa)
 
 
-
+    #folium.TileLayer("OpenStreetMap", name="Mapa de Rua").add_to(mapa)
     # Adiciona controle de camadas
-    folium.LayerControl().add_to(mapa)
+    folium.LayerControl(collapsed=True).add_to(mapa)
 
 
     # Display the map and capture clicks
-    map_data = st_folium(mapa, height=600, width=900)
+    map_data = st_folium(mapa, height=600, width="100%")
 
 
 
@@ -432,7 +449,7 @@ if submitted:
         st.session_state.map_coords_list = []
         st.session_state.selected_feature_index = 0
     else:
-        st.info("Pesquisando...")
+        pass
 
         # Monta a cláusula WHERE para a API principal
         if search_field == "CIU":
@@ -454,7 +471,7 @@ if submitted:
         api_url = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CADASTRO_TERRITORIAL/FeatureServer/10/query"
         params = {
             "where": where_clause,
-            "outFields": "pu_ciu,pu_cipu,pu_projeto,pu_end_cart,pu_ra,pu_end_usual,pu_situacao,pn_norma_vg,x,y,pu_arquivo,pn_cod_par,qd_dim_frente,qd_dim_fundo,qd_dim_lat_dir,qd_dim_lat_esq,qd_dim_chanfro", # Incluindo pu_arquivo
+            "outFields": "pu_ciu,pu_cipu,pu_projeto,pn_cod_par,pu_end_cart,pu_ra,pu_end_usual,pu_situacao,pn_norma_vg,x,y,pu_arquivo,qd_dim_frente,qd_dim_fundo,qd_dim_lat_dir,qd_dim_lat_esq,qd_dim_chanfro", # Incluindo pu_arquivo
             "returnGeometry": "true",
             "f": "json"
         }
@@ -472,7 +489,7 @@ if submitted:
                 st.session_state.map_coords_list = []
                 st.session_state.selected_feature_index = 0
             else:
-                st.success(f"{len(data['features'])} resultado(s) encontrado(s).")
+                #st.success(f"{len(data['features'])} resultado(s) encontrado(s).")
                 
                 # Limpa estados anteriores para a nova busca
                 st.session_state.all_general_data = []
@@ -514,7 +531,7 @@ if submitted:
                         "dimensao_direita": attrs.get('qd_dim_lat_dir', 'N/A'), 
                         "dimensao_esquerda": attrs.get('qd_dim_lat_esq', 'N/A'), 
                         "dimensao_chanfro": attrs.get('qd_dim_chanfro', 'N/A'),
-                        "geometry": feature.get("geometry") # <-- Novo campo para armazenar a geometria
+                        "geometry": feature.get("geometry"), # <-- Novo campo para armazenar a geometria,
                     }
                     st.session_state.all_general_data.append(general_entry)
 
@@ -634,7 +651,7 @@ if st.session_state.all_general_data:
         linkppcub = 'https://sistemas.df.gov.br/PPCUB_SEDUH/Geoportal?File='
         codigo_parametro = selected_data.get('codigo_parametro')
 
-        
+        st.write(f"**Código do Parâmetro**: {codigo_parametro}")
         # Adiciona texto adicional conforme o caso
         # Adiciona texto adicional conforme o caso
         if norma_vigente == "LC 1041/2024":
@@ -646,6 +663,35 @@ if st.session_state.all_general_data:
             norma_vigente += " (LUOS)"
 
         st.write(f"**Norma Vigente**: {norma_vigente}")
+
+        # --- Geração automática do link do croqui para Lago Sul e Lago Norte ---
+        if nome_ra in ["Lago Sul", "Lago Norte"]:
+            end_usual = selected_data.get('end_usual', '')
+            if end_usual:
+                # Divide o endereço em partes separadas por espaço
+                partes = end_usual.split()
+
+                # Garante que há pelo menos 3 partes (ex: SHIN QI 7 CJ 16 LT 8)
+                if len(partes) >= 3:
+                    var1 = partes[0]  # SHIN, SHIS etc.
+                    var2 = partes[1]  # QI, QL, QE...
+                    var3 = partes[2]  # número da quadra
+
+                    # Procura o índice do "CJ" e captura o número do conjunto
+                    cj_index = None
+                    for i, p in enumerate(partes):
+                        if p == "CJ":
+                            cj_index = i
+                            break
+
+                    if cj_index is not None and cj_index + 1 < len(partes):
+                        var4 = partes[cj_index + 1]  # número do conjunto
+                        url_padrao = f"https://www.geoservicos.ide.df.gov.br/anexos/CROQUIS/{var1}_{var2}_{var3}_CJ_{var4}.pdf"
+                        st.markdown(f"**Lago Sul ou Lago Norte - Croqui dos Afastamentos:** [Abrir croqui]({url_padrao})")
+                    else:
+                        st.info("Não foi possível identificar o conjunto (CJ) no endereço usual.")
+                else:
+                    st.info("Endereço usual não está no formato esperado para gerar o croqui.")
 
         col1, col2 = st.columns(2)
 
@@ -667,8 +713,7 @@ if st.session_state.all_general_data:
             for idx, result in enumerate(st.session_state.all_general_data):
                 with st.container():
                     st.write(f"**Resultado {idx + 1}**")
-                    st.write(f"CIU: {result['ciu']}")
-                    
+                    st.write("Atenção: Não é possível Gerar Certidão para os lotes localizados no PPCUB")
                     # Botão para gerar certidão - só aparece se houver CIPU
                     if result['cipu'] != 'N/A':
                         if st.button(f"Gerar Certidão para CIPU {result['cipu']}", key=f"cert_{result['cipu']}_{idx}"):
@@ -676,6 +721,7 @@ if st.session_state.all_general_data:
                             
                             url_submit = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/certidaoparametrosurb/GPServer/certidao_parametros_urb/submitJob"
                             payload = {"codigo": str(result['cipu']), "f": "json"}
+
                             
                             try:
                                 response = requests.post(url_submit, data=payload)
@@ -708,16 +754,16 @@ if st.session_state.all_general_data:
                             if "results" in job_info:
                                 for key, val in job_info["results"].items():
                                     if key == "arquivo":
-                                        result_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/GerarVertices/GPServer/GerarVertices/jobs/{job_id}/{val['paramUrl']}?f=json"
+                                        result_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/certidaoparametrosurb/GPServer/certidao_parametros_urb/jobs/{job_id}/{val['paramUrl']}?f=json"
                                         result = requests.get(result_url).json()
                                         value = result.get("value")
 
                                         # Se for link direto (caso da certidão), usa como está
                                         if value and value.startswith("http"):
                                             file_url = value
-                                        # Se for apenas o nome do arquivo (caso do GerarVertices), monta a URL no diretório de jobs
+                                        # Se for apenas o nome do arquivo, monta a URL no diretório correto do job
                                         elif value:
-                                            file_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/directories/arcgisjobs/geoprocessing/gerarvertices_gpserver/{job_id}/scratch/{value}"
+                                            file_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/directories/arcgisjobs/geoprocessing/certidaoparametrosurb_gpserver/{job_id}/scratch/{value}"
                                         else:
                                             file_url = None
 
@@ -725,8 +771,9 @@ if st.session_state.all_general_data:
                                 st.warning("Link do arquivo não encontrado.")
                                 st.stop()
 
-                            st.subheader("📂 Arquivo Gerado")
-                            st.markdown(f"[Clique aqui para baixar]({file_url})", unsafe_allow_html=True)
+
+                            st.write("Arquivo Gerado")
+                            st.subheader(f"[🧾 Clique aqui para baixar 🧾]({file_url})", unsafe_allow_html=True)
 
 
 
@@ -869,10 +916,14 @@ if st.session_state.all_general_data:
                     taxa_ocupacao_float = float(taxa_ocupacao)
                     taxa_permeabilidade_float = float(taxa_permeabilidade)
 
-                    st.write(f"*Área básica de construção calculada (m²): {area_lote_float * coeficiente_basico_float:.2f}")
-                    st.write(f"*Área máxima de construção calculada (m²): {area_lote_float * coeficiente_maximo_float:.2f}")
-                    st.write(f"*Taxa de ocupação calculada (m²): {area_lote_float * (taxa_ocupacao_float/100):.2f}")
-                    st.write(f"*Área permeável calculada (m²): {area_lote_float * (taxa_permeabilidade_float/100):.2f}")
+                    st.info(f"""
+                    **📐 Cálculos automáticos**
+
+                    **Área básica de construção (m²):** {area_lote_float * coeficiente_basico_float:.2f}  
+                    **Área máxima de construção (m²):** {area_lote_float * coeficiente_maximo_float:.2f}  
+                    **Taxa de ocupação máxima (m²):** {area_lote_float * (taxa_ocupacao_float/100):.2f}  
+                    **Área permeável mínima (m²):** {area_lote_float * (taxa_permeabilidade_float/100):.2f}
+                    """)
 
                 except (ValueError, TypeError):
                     st.warning("Não foi possível calcular as áreas de construção e permeabilidade devido a valores inválidos.")
@@ -947,7 +998,7 @@ if st.session_state.all_general_data:
                 def get_value(val):
                     return val if val is not None else "N/A"
                 st.write(f"**Uso**: {get_value(normas_attrs.get('pn_uso'))}")
-                st.write(f"**Parâmetro UOS**: {get_value(normas_attrs.get('pn_uos_par'))}")
+                st.write(f"**Código do Parâmetro**: {get_value(normas_attrs.get('pn_cod_par'))}")
                 st.write(f"**Coeficiente de aproveitamento básico**: {get_value(normas_attrs.get('pn_cfa_b'))}")
                 st.write(f"**Coeficiente de aproveitamento máximo**: {get_value(normas_attrs.get('pn_cfa_m'))}")
                 st.write(f"**Taxa de ocupação (%)**: {get_value(normas_attrs.get('pn_tx_ocu'))}")
@@ -1049,10 +1100,14 @@ if st.session_state.all_general_data:
                     taxa_ocupacao_float2 = to_float_or_zero(ngb_taxa_ocupacao)
                     taxa_permeabilidade_float2 = to_float_or_zero(ngb_taxa_permeabilidade)
 
-                    st.write(f"*Área básica de construção calculada (m²): {area_lote_float2 * coeficiente_basico_float2:.2f}")
-                    st.write(f"*Área máxima de construção calculada (m²): {area_lote_float2 * coeficiente_maximo_float2:.2f}")
-                    st.write(f"*Taxa de ocupação calculada (m²): {area_lote_float2 * (taxa_ocupacao_float2/100):.2f}")
-                    st.write(f"*Área permeável calculada (m²): {area_lote_float2 * (taxa_permeabilidade_float2/100):.2f}")
+                    st.info(f"""
+                    **📐 Cálculos automáticos**
+                            
+                    **Área básica de construção (m²):** {area_lote_float2 * coeficiente_basico_float2:.2f}  
+                    **Área máxima de construção (m²):** {area_lote_float2 * coeficiente_maximo_float2:.2f}  
+                    **Taxa de ocupação máxima (m²):** {area_lote_float2 * (taxa_ocupacao_float2/100):.2f}  
+                    **Área permeável mínima (m²):** {area_lote_float2 * (taxa_permeabilidade_float2/100):.2f}
+                    """)
         else:
             st.warning(f"Nenhuma informação de Normas encontrada para CIPU {selected_cipu}.")
 
@@ -1169,7 +1224,7 @@ if st.session_state.all_general_data:
             layers="6",
             fmt="image/png",
             transparent=True,
-            max_zoom=21,
+            max_zoom=23,
             attr="GDF / GeoServiços",
             show=False  # Desligado por padrão
         ).add_to(m)
@@ -1182,7 +1237,7 @@ if st.session_state.all_general_data:
             layers="0",
             fmt="image/png",
             transparent=True,
-            max_zoom=21,
+            max_zoom=23,
             attr="IDE-DF / GeoServiços",
             show=False  # Mude para True se quiser que carregue por padrão
         )
@@ -1195,7 +1250,7 @@ if st.session_state.all_general_data:
             layers="0",
             fmt="image/png",
             transparent=True,
-            max_zoom=21,
+            max_zoom=23,
             attr="IDE-DF / GeoServiços",
             show=False  # Mude para True se quiser que carregue por padrão
         )
@@ -1208,7 +1263,7 @@ if st.session_state.all_general_data:
             layers="0",
             fmt="image/png",
             transparent=True,
-            max_zoom=21,
+            max_zoom=23,
             attr="IDE-DF / GeoServiços",
             show=False  # Mude para True se quiser que carregue por padrão
         )
@@ -1226,7 +1281,7 @@ if st.session_state.all_general_data:
             attr="World Imagery Wayback 2022",
             name="2022 - Arcgis",
             overlay=True,
-            max_zoom=21,
+            max_zoom=23,
             control=True,
             show=False
         ).add_to(m)
@@ -1236,7 +1291,7 @@ if st.session_state.all_general_data:
             attr="World Imagery Wayback 2023",
             name="2023 - Arcgis",
             overlay=True,
-            max_zoom=21,
+            max_zoom=23,
             control=True,
             show=False
         ).add_to(m)
@@ -1301,9 +1356,10 @@ if st.session_state.all_general_data:
         # Exibe o mapa no Streamlit
         st_folium(m, width=700, height=500)
 
-
+        
 else:
-    st.info("Use o formulário acima para pesquisar e ver os resultados do Cadastro Territorial.")
+    pass
+
 
 
 
@@ -1320,13 +1376,367 @@ if 'observacoes_selecionadas' not in st.session_state:
 if 'texto_livre' not in st.session_state:
     st.session_state.texto_livre = ""
 
+#################################################
+with st.expander("**Busca automática nos PDFs do Anexo III - LUOS**", expanded=False):
+    
+    st.write("Data: Santa Maria e Minuta Lago Sul = LC1047/2025, restante = LC 1007/2022")
+    # Função para extrair e buscar observação
+    def parse_e_busca_observacao(linha_encontrada, df_observacao):
+        if linha_encontrada.empty:
+            st.warning('Nenhuma linha encontrada para processar.')
+            return None
 
+        try:
+            valor_uos = linha_encontrada.iloc[0, 1]
+            match = re.search(r'\((.*?)\)', str(valor_uos))
+
+            if match:
+                numero_observacao = match.group(1).strip()
+                df_observacao.iloc[:, 0] = df_observacao.iloc[:, 0].astype(str).str.strip()
+                df_observacao.iloc[:, 0] = df_observacao.iloc[:, 0].str.replace(r'\.0$', '', regex=True)
+
+                observacao_encontrada = df_observacao[df_observacao.iloc[:, 0] == numero_observacao]
+
+                if not observacao_encontrada.empty:
+                    texto_observacao = ' '.join(
+                        str(x) for x in observacao_encontrada.iloc[0, 1:].dropna() if str(x) != 'nan'
+                    )
+                    return texto_observacao
+                else:
+                    st.warning(f'Nenhuma observação encontrada para o número: {numero_observacao}')
+                    return None
+            else:
+                return None
+        except Exception as e:
+            st.error(f"Erro ao processar observação: {e}")
+            return None
+
+
+    # Função para exibir dados organizados
+    def exibir_dados_organizados(linha_encontrada):
+        if linha_encontrada.empty:
+            return
+        linha = linha_encontrada.iloc[0].values
+        mapeamento_indices = {
+            0: 'Código',
+            1: 'UOS',
+            2: 'Faixa Área(m²)',
+            3: 'Coeficiente Básico',
+            4: 'Coeficiente Máximo',
+            5: 'Taxa de Ocupação (%)',
+            6: 'Taxa de permeabilidade (%)',
+            7: 'Altura Máxima',
+            8: 'Afastamento Frontal',
+            9: 'Afastamento Fundos',
+            10: 'Afastamento Lateral',
+            11: 'Observação do Afastamento',
+            12: 'Marquise',
+            13: 'Galeria',
+            14: 'Cota de Soleira',
+            15: 'Subsolo'
+        }
+        for indice, nome_exibicao in mapeamento_indices.items():
+            if indice < len(linha) and pd.notna(linha[indice]) and str(linha[indice]).strip() != '':
+                st.write(f"**{nome_exibicao}:** {linha[indice]}")
+            else:
+                st.write(f"**{nome_exibicao}:** -")
+
+
+    def normalizar_texto(txt):
+        if txt is None:
+            return ""
+        txt = str(txt).strip().lower()
+        txt = unicodedata.normalize("NFD", txt)
+        txt = "".join(ch for ch in txt if unicodedata.category(ch) != "Mn")
+        return txt
+
+
+    # --- Execução principal ---
+    if st.session_state.get("all_general_data"):
+        resultado = st.session_state.all_general_data[st.session_state.selected_feature_index]
+
+        # 🔹 Garante que o CIPU fique salvo corretamente no estado global
+        cipu_valor = resultado.get("cipu") or resultado.get("CIPU") or resultado.get("lu_cipu")
+        if cipu_valor:
+            st.session_state.selected_cipu = str(cipu_valor).strip()
+            #st.write(f"✅ CIPU armazenado no estado: {st.session_state.selected_cipu}")
+        else:
+            st.warning("⚠️ CIPU não encontrado no resultado inicial.")
+
+        # --- Botão de busca ---
+        if st.button("🔍 Buscar", key="buscar_parametros"):
+            nome_ra_norm = normalizar_texto(nome_ra)
+
+            regioes_implementadas = [
+                "Plano Piloto", "Gama", "Taguatinga", "Brazlândia", "Sobradinho", "Planaltina",
+                "Paranoá", "Núcleo Bandeirante", "Ceilândia", "Guará", "Cruzeiro", "Samambaia",
+                "Santa Maria", "São Sebastião", "Recanto das Emas", "Lago Sul", "Riacho Fundo",
+                "Lago Norte", "Candangolândia", "Águas Claras", "Riacho Fundo II",
+                "Sudoeste/Octogonal", "Varjão", "Park Way", "SCIA", "Sobradinho II",
+                "Jardim Botânico", "Itapoã", "SIA", "Vicente Pires", "Fercal"
+            ]
+
+            regioes_implementadas_norm = [normalizar_texto(r) for r in regioes_implementadas]
+
+            def nome_arquivo_seguro(nome_ra):
+                nome = unicodedata.normalize("NFD", nome_ra)
+                nome = "".join(ch for ch in nome if unicodedata.category(ch) != "Mn")
+                nome = nome.replace(" ", "_")
+                return nome
+
+            if nome_ra_norm in regioes_implementadas_norm:
+                try:
+                    nome_arquivo_base = nome_arquivo_seguro(nome_ra)
+                    arquivo_lista = f"{nome_arquivo_base}_lista.csv"
+                    arquivo_observacao = f"{nome_arquivo_base}_observacao.csv"
+
+                    # --- 🔎 Tenta buscar código de parâmetro se estiver vazio ---
+                    if not codigo_parametro or str(codigo_parametro).strip().lower() in ["none", "nan", "0", "n/a", ""]:
+                        selected_cipu = st.session_state.get("selected_cipu")
+                        st.write("🔎 DEBUG: selected_cipu =", selected_cipu)
+
+                        if selected_cipu:
+                            st.info(f"Buscando código de parâmetro (LUOS) para CIPU {selected_cipu}...")
+
+                            api_url_LUOS = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/LUOS/MapServer/11/query"
+                            params_LUOS = {
+                                "where": f"lu_cipu = '{str(selected_cipu).strip()}'",
+                                "outFields": "lu_cod_par",
+                                "returnGeometry": "false",
+                                "f": "json"
+                            }
+
+                            try:
+                                response_LUOS = requests.get(api_url_LUOS, params=params_LUOS)
+                                response_LUOS.raise_for_status()
+                                data_LUOS = response_LUOS.json()
+
+                                if data_LUOS.get("features"):
+                                    codigo_parametro = data_LUOS["features"][0]["attributes"].get("lu_cod_par")
+                                    if codigo_parametro:
+                                        st.success(f"Código de parâmetro encontrado automaticamente: {codigo_parametro}")
+                                    else:
+                                        st.warning("⚠️ Nenhum código de parâmetro retornado pelo serviço LUOS.")
+                                else:
+                                    st.warning(f"⚠️ Nenhum resultado encontrado no serviço LUOS para CIPU {selected_cipu}.")
+                            except Exception as e:
+                                st.error(f"Erro ao buscar código de parâmetro no serviço LUOS: {e}")
+                        else:
+                            st.warning("⚠️ Não foi possível buscar o código: CIPU inválido ou ausente.")
+
+                    st.write(f"**🏙️ Região Administrativa:** {nome_ra or 'N/A'}")
+                    st.write(f"**📘 Código do Parâmetro:** {codigo_parametro or 'N/A'}")
+
+                    # --- Carrega e exibe ---
+                    df_lista = pd.read_csv(arquivo_lista, sep=';', header=None)
+                    df_observacao = pd.read_csv(
+                        arquivo_observacao,
+                        sep=';',
+                        header=None,
+                        on_bad_lines='skip',
+                        dtype=str
+                    )
+
+                    linha_encontrada = df_lista[df_lista.iloc[:, 0].astype(str) == str(codigo_parametro)]
+
+                    if not linha_encontrada.empty:
+                        exibir_dados_organizados(linha_encontrada)
+                        st.write("**📝 Observação:**")
+                        observacao = parse_e_busca_observacao(linha_encontrada, df_observacao)
+                        if observacao:
+                            st.markdown(observacao)
+                        else:
+                            st.info("Nenhuma observação encontrada para este parâmetro.")
+                    else:
+                        st.error(f"❌ Código de parâmetro '{codigo_parametro}' não encontrado nas listas de {nome_ra}.")
+                except FileNotFoundError:
+                    st.error(f"❌ Arquivo não encontrado. Verifique se '{arquivo_lista}' e '{arquivo_observacao}' existem.")
+                except Exception as e:
+                    st.error(f"❌ Ocorreu um erro: {e}")
+            else:
+                st.warning(f"⚠️ Região {nome_ra or 'N/A'} ainda não implementada.")
+    else:
+        st.info("Primeiro realize a pesquisa do imóvel na etapa anterior para carregar os dados.")
+
+
+    st.markdown("---")
+    st.subheader("Buscar diretamente pelo CIPU")
+
+    # Entrada do CIPU
+    cipu_input = st.text_input("Digite o número do CIPU", placeholder="Exemplo: 4515323")
+
+    # Limpeza da entrada (remove espaços, pontos, vírgulas e ponto e vírgula)
+    cipu_input = cipu_input.replace(" ", "").replace(".", "").replace(",", "").replace(";", "")
+
+    # Dicionário de RAs (LUOS)
+    regioes_administrativas_luos = {
+        1: "Plano Piloto",
+        2: "Gama",
+        3: "Taguatinga",
+        4: "Brazlândia",
+        5: "Sobradinho",
+        6: "Planaltina",
+        7: "Paranoá",
+        8: "Núcleo Bandeirante",
+        9: "Ceilândia",
+        10: "Guará",
+        11: "Cruzeiro",
+        12: "Samambaia",
+        13: "Santa Maria",
+        14: "São Sebastião",
+        15: "Recanto das Emas",
+        16: "Lago Sul",
+        17: "Riacho Fundo",
+        18: "Lago Norte",
+        19: "Candangolândia",
+        20: "Águas Claras",
+        21: "Riacho Fundo II",
+        22: "Sudoeste/Octogonal",
+        23: "Varjão",
+        24: "Park Way",
+        25: "SCIA",
+        26: "Sobradinho II",
+        27: "Jardim Botânico",
+        28: "Itapoã",
+        29: "SIA",
+        30: "Vicente Pires",
+        31: "Fercal",
+        32: "Sol Nascente e Por do Sol",
+        33: "Arniqueira",
+        34: "Arapoanga",
+        35: "Água Quente",
+    }
+
+    # --- Botão principal ---
+    if st.button("Buscar informações LUOS do CIPU"):
+        if not cipu_input.strip().isdigit():
+            st.warning("Por favor, insira um CIPU numérico válido.")
+        else:
+            try:
+                # Consulta o serviço LUOS
+                api_url = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/LUOS/MapServer/11/query"
+                params = {
+                    "where": f"lu_cipu = {cipu_input}",
+                    "outFields": "lu_cod_par,lu_ra_luos",
+                    "returnGeometry": "false",
+                    "f": "json"
+                }
+
+                response = requests.get(api_url, params=params)
+                response.raise_for_status()
+                data = response.json()
+
+                if not data.get("features"):
+                    st.error(f"Nenhum resultado encontrado para o CIPU {cipu_input}.")
+                else:
+                    attrs = data["features"][0]["attributes"]
+                    codigo_parametro = attrs.get("lu_cod_par")
+                    cod_ra = attrs.get("lu_ra_luos")
+                    nome_ra = regioes_administrativas_luos.get(cod_ra, f"RA {cod_ra} (não mapeada)")
+
+                    st.write(f"**📘 Código de Parâmetro:** {codigo_parametro or '-'}")
+                    st.write(f"**🏙️ Região Administrativa:** {nome_ra}")
+
+                    # Guarda no session_state
+                    st.session_state["selected_cipu"] = cipu_input
+                    st.session_state["codigo_parametro"] = codigo_parametro
+                    st.session_state["nome_ra"] = nome_ra
+
+                    # ===============================
+                    # === BUSCA NAS TABELAS CSV ===
+                    # ===============================
+
+                    def nome_arquivo_seguro(nome_ra):
+                        nome = unicodedata.normalize("NFD", nome_ra)
+                        nome = "".join(ch for ch in nome if unicodedata.category(ch) != "Mn")
+                        nome = nome.replace(" ", "_")
+                        return nome
+
+                    try:
+                        nome_arquivo_base = nome_arquivo_seguro(nome_ra)
+                        arquivo_lista = f"{nome_arquivo_base}_lista.csv"
+                        arquivo_observacao = f"{nome_arquivo_base}_observacao.csv"
+
+                        df_lista = pd.read_csv(arquivo_lista, sep=';', header=None)
+                        df_observacao = pd.read_csv(
+                            arquivo_observacao,
+                            sep=';',
+                            header=None,
+                            on_bad_lines='skip',
+                            dtype=str
+                        )
+
+                        # Filtra pela coluna 0 (código do parâmetro)
+                        linha_encontrada = df_lista[df_lista.iloc[:, 0].astype(str) == str(codigo_parametro)]
+
+                        if not linha_encontrada.empty:
+                            st.write("Parâmetros Urbanísticos")
+                            # Exibe os dados
+                            mapeamento_indices = {
+                                0: 'Código',
+                                1: 'UOS',
+                                2: 'Faixa Área(m²)',
+                                3: 'Coeficiente Básico',
+                                4: 'Coeficiente Máximo',
+                                5: 'Taxa de Ocupação (%)',
+                                6: 'Taxa de Permeabilidade (%)',
+                                7: 'Altura Máxima',
+                                8: 'Afastamento Frontal',
+                                9: 'Afastamento Fundos',
+                                10: 'Afastamento Lateral',
+                                11: 'Observação do Afastamento',
+                                12: 'Marquise',
+                                13: 'Galeria',
+                                14: 'Cota de Soleira',
+                                15: 'Subsolo'
+                            }
+
+                            linha = linha_encontrada.iloc[0].values
+                            for indice, nome_exibicao in mapeamento_indices.items():
+                                if indice < len(linha) and pd.notna(linha[indice]) and str(linha[indice]).strip() != '':
+                                    st.write(f"**{nome_exibicao}:** {linha[indice]}")
+                                else:
+                                    st.write(f"**{nome_exibicao}:** -")
+
+                            # Observação
+                            st.write("### 📝 Observação")
+                            valor_uos = linha_encontrada.iloc[0, 1]
+                            match = re.search(r'\((.*?)\)', str(valor_uos))
+                            if match:
+                                numero_obs = match.group(1).strip()
+                                df_observacao.iloc[:, 0] = df_observacao.iloc[:, 0].astype(str).str.strip()
+                                df_observacao.iloc[:, 0] = df_observacao.iloc[:, 0].str.replace(r'\.0$', '', regex=True)
+                                obs = df_observacao[df_observacao.iloc[:, 0] == numero_obs]
+                                if not obs.empty:
+                                    texto_obs = ' '.join(
+                                        str(x) for x in obs.iloc[0, 1:].dropna() if str(x) != 'nan'
+                                    )
+                                    st.write(texto_obs)
+                                else:
+                                    st.info("Nenhuma observação encontrada para este parâmetro.")
+                            else:
+                                st.info("Nenhuma observação associada.")
+                        else:
+                            st.error(f"Código de parâmetro '{codigo_parametro}' não encontrado nas listas de {nome_ra}.")
+
+                    except FileNotFoundError:
+                        st.error(f"❌ Arquivo não encontrado. Verifique se '{arquivo_lista}' e '{arquivo_observacao}' existem.")
+                    except Exception as e:
+                        st.error(f"Erro ao processar os arquivos CSV: {e}")
+
+            except Exception as e:
+                st.error(f"Erro ao consultar o serviço LUOS: {e}")
+
+
+############################################################################################################
+
+############################################################################################################
 
 #######################
 #SEDUH
-with st.expander("**Anexo III - Parâmetros Urbanísticos do Terreno**"):
+with st.expander("**PDFs do Anexo II e III (LUOS) de forma manual**"):
     # Dados das regiões e links (no formato: Região;Link1;Link2)
-    # Dados das regiões e links (no formato: Região;Link1;Link2)
+    st.write("Data: Santa Maria e Minuta Lago Sul = LC1047/2025, restante = LC 1007/2022")
     dados_regioes = """
     Gama;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-1A_Gama.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-1A_Gama.pdf
     Taguatinga;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-2A_Taguatinga.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-2A_Taguatinga.pdf
@@ -1338,10 +1748,10 @@ with st.expander("**Anexo III - Parâmetros Urbanísticos do Terreno**"):
     Ceilândia;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-8A_Ceilandia.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-8A_Ceilandia.pdf
     Guará;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-9A_Guara.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-9A_Guara.pdf
     Samambaia;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-10A_Samambaia.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-10A_Samambaia.pdf
-    Santa Maria;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-11A_Santa-Maria.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-11A_Santa-Maria.pdf
+    Santa Maria;https://www.seduh.df.gov.br/documents/d/seduh/anexo-ii-mapa-11a-regiao-administrativa-de-santa-maria-ra-xiii-pdf;https://www.seduh.df.gov.br/documents/d/seduh/anexo-iii-quadro-11a-regiao-administrativa-de-santa-maria-ra-xiii-pdf
     Sao Sebastiao;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-12A_Sao-Sebastiao.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-12A_Sao-Sebastiao.pdf
     Recanto das Emas;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-13A_Recanto-das-Emas.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-13A_Recanto-das-Emas.pdf
-    Lago Sul;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-14A_Lago-Sul.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-14A_Lago-Sul.pdf
+    Lago Sul;https://www.seduh.df.gov.br/documents/d/seduh/anexo-ii-mapa-14a-regiao-administrativa-do-lago-sul-ra-xvi-pdf;https://www.seduh.df.gov.br/documents/d/seduh/anexo-iii-quadro-14a-regiao-administrativa-do-lago-sul-ra-xvi-pdf
     Riacho Fundo;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-15A_Riacho-Fundo.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-15A_Riacho-Fundo.pdf
     Lago Norte;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-16A_Lago-Norte.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-16A_Lago-Norte.pdf
     Aguas Claras;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-17A_Aguas-Claras.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-17A_Aguas-Claras.pdf
@@ -1394,10 +1804,12 @@ with st.expander("**Anexo III - Parâmetros Urbanísticos do Terreno**"):
 ##############
 
 
-#######################################
-# Restante do seu código permanece igual...
-# Layout do formulário
-# --- Expander Principal ---
+
+############################################################################################################
+
+
+############################################################################################################
+
 
 if 'endereco' not in st.session_state:
     st.session_state.endereco = 'Não'
@@ -1419,192 +1831,11 @@ if 'obs_poda' not in st.session_state:
 
 
 
-with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
-    
-
-
-    # --- Perguntas do Resumo Final ---
-    
-    st.radio("**1) Existe rampa (cunha) na entrada de veículos?**", options=['Sim', 'Não'], key='rampa', horizontal=True)
-    st.radio("**2) Existe telhado em área pública?**", options=['Sim', 'Não'], key='telhado', horizontal=True)
-    st.radio("**3) Falta Placa de Endereçamento?**", options=['Sim', 'Não'], key='endereco', horizontal=True)
-    st.radio("**4) Área impermeável onde foi previsto permabilidade?**", options=['Sim', 'Não'], key='obs_area_verde', horizontal=True) 
-    st.radio("**5) Falta calçada ou está irregular?**", options=['Sim', 'Não'], key='falta_calcada', horizontal=True) 
-
-    st.divider()
-
-    # --- Campo de Observações (Seleção única) ---
-    st.subheader("Observações")
-    
-    opcoes_obs = {
-        "Art 151": "Trata-se de processo de Habite-se de Regularização, conforme ATESTADO DE HABILITAÇÃO DE REGULARIZAÇÃO, embasado no ART.151 da LEI Nº 6.138/18, sendo, portanto, a vistoria restrita à verificação da consonância do imóvel executado com o licenciado através do projeto de arquitetura visado.",
-        "Art 153": "Trata-se de processo de Habite-se de Regularização, conforme ATESTADO DE HABILITAÇÃO DE REGULARIZAÇÃO, embasado no ART.153 da LEI Nº 6.138/18, sendo, portanto, a vistoria restrita à verificação da consonância do imóvel executado com o licenciado através do projeto de arquitetura depositado. Obra comprovadamente concluída há mais de cinco anos. Indevida a cobrança da Taxa de Execução de Obras - TEO. Parecer técnico UREC/DF LEGAL de 05/10/2020 - Processo SEI 04017-00015495/2020-87",
-        "Alvará 7 dias": "Vistoria restrita à verificação da consonância do imóvel executado com o licenciado pelo Alvará de Construção supracitado, referente ao projeto de arquitetura depositado conforme Termo de Responsabilidade e Cumprimento de Normas, TRCN, com base na Lei 6.412/2019 e Decreto 40.302/2019",
-        "Alvarás antigos (2018<)": "Vistoria restrita à verificação da consonância do imóvel executado com o licenciado pelo Alvará de Construção supracitado, referente ao projeto de arquitetura visado."
-    }
-    
-    st.radio(
-        "Selecione uma opção para o campo 'Observações':",
-        options=list(opcoes_obs.keys()),
-        format_func=lambda x: x if x else "Nenhuma",
-        key='observacoes_selecionadas'
-    )
-
-    st.radio("Nota Técnica para as calçadas do Park Way, Chácaras do Lago Sul, SMDB e SMLN", options=['Sim', 'Não'], key='calcada_parway', horizontal=True) 
-    st.radio("Nota Técnica para as calçadas do Condomínio Verde do JB", options=['Sim', 'Não'], key='calcada_verde', horizontal=True) 
-    st.radio("Nota sobre a Metragem do imóvel", options=['Sim', 'Não'], key='obs_metragem', horizontal=True)  
-    st.radio("Nota sobre poda de árvore", options=['Sim', 'Não'], key='obs_poda', horizontal=True)  
-    st.radio("Nota sobre calçada", options=['Sim', 'Não'], key='calcada_pequena', horizontal=True) 
- 
- 
-
-    st.divider()
-
-    # --- Campo Livre ---
-    st.subheader("Informações Adicionais (Resumo)")
-    st.text_area(
-        "Adicione qualquer informação relevante ao resumo final:",
-        key='texto_livre',
-        height=100
-    )
-
-    st.divider()
-    
-    # --- Botão para gerar o relatório ---
-    if st.button("**Gerar Relatório**"):
-        st.session_state.relatorio_gerado = True
-
-    # --- Bloco de Resumo Final e Ações ---
-    if st.session_state.relatorio_gerado:
-        st.subheader("Resumo da Vistoria")
-        
-        # --- Lógica de geração do resumo e observações ---
-        resumo_final = []
-        observacoes_final = []
-        
-        if st.session_state.rampa == "Sim":
-            resumo_final.append("O responsável deverá demolir a rampa (cunha) instalada no acesso aos veículos invadindo a pista de rolamento. Art. 10 inciso VI do Decreto 38047/2017.")
-        
-        if st.session_state.telhado == "Sim":
-            resumo_final.append("O telhado está ultrapassando o limite do lote. O interessado deverá retirar a parte do telhado que avança sobre área pública e providenciar a devida coleta da água pluvial de modo a não lança-la diretamente no passeio (calçada). Art. 62, inciso III, da Lei nº 6.138/2018, - a edificação não extrapole os limites do lote ou da projeção -.")
-        
-        if st.session_state.endereco == "Sim":
-            resumo_final.append("Não consta placa de endereçamento. De acordo com o Art. 163 do Descreto Nº 43.056, DE 03 DE MARÇO DE 2022, na vistoria para subsidiar a emissão da carta de habite-se ou do atestado de conclusão, deve-se verificar: a instalação de placa de endereçamento legível, quando exigível.")
-        
-        if st.session_state.obs_area_verde == "Sim":
-            resumo_final.append("Foi constado que existe área impermeável (calçada) nos locais indicados, no projeto arquitetônico, onde era previsto área permeável. De acordo com o Art. 163 do Descreto Nº 43.056, DE 03 DE MARÇO DE 2022, os parâmetros urbanísticos do projeto habilitado ou depositado a serem observados são: XII - taxa de permeabilidade ou de área verde")
-        
-        if st.session_state.falta_calcada == "Sim":
-            resumo_final.append("A largura mínima das rotas acessíveis deve ser de 1,20 m, admitindo-se redução pontual para até 0,90 m, limitada a trechos com extensão máxima de 0,80 m, conforme a NBR 9050. A calçada deverá ainda possuir superfície antiderrapante, com piso regular, na altura do meio-fio e de forma contínua, sem interrupção do passeio para o acesso de veículos para a garagem, e com inclinação transversal máxima de 3%.")
-        
-
-
-
-
-        if st.session_state.texto_livre:
-            resumo_final.append(st.session_state.texto_livre)
-
-
-
-            
-        if st.session_state.observacoes_selecionadas:
-            # Use .append() para adicionar o valor à lista
-            observacoes_final.append(opcoes_obs[st.session_state.observacoes_selecionadas])
-
-        if st.session_state.calcada_parway == "Sim":
-            observacoes_final.append("De acordo com a Nota Técnica N°1/2025-DF LEGAL/ SECEX/ UACESS, para obras em unidades de lotes no Park Way, Chácaras do Lago Sul, SMDB e SMLN, os itens 18.i e 18.j da NGB 118/97 e 18.n da NGB 161/98 foram revogados pela LUOS, passando a responsabilidade da execução da área comum (inclusive calçada) para o Condomínio, conforme estabelecido no Código de Obras e Edificações do Distrito Federal e na Convenção e Instituição de Condomínio de cada lote específico. Portanto, as calçadas internas ao lote não serão cobradas da última unidade quando da solicitação da Vistoria de Habite-se.")
-
-        if st.session_state.calcada_verde == "Sim":
-            observacoes_final.append("De acordo com a Nota Técnica nº.30/2023-DF-LEGAL/SUOB/COFIS/DIACESS, de 17/03/2023, o Condomínio Verde será responsável por executar ou reconstruir, no final da obra de urbanização, todas as calçadas contíguas às testadas dos lotes, conforme determina o inciso VIII, do artigo 15, da Lei nº 6.138/2018, atendendo à acessibilidade das áreas comuns e áreas lindeiras.")
-
-        if st.session_state.obs_metragem == "Sim":
-            observacoes_final.append("Ressaltamos que a área construída é declarada pelo Responsável Técnico, não cabendo a esta fiscalização afirmar se a área construída está correta em sua metragem final. ")
-
-        if st.session_state.obs_poda == "Sim":
-            observacoes_final.append("Este laudo não constitui autorização para poda ou supressão de árvores.")
-
-        if st.session_state.calcada_pequena == "Sim":
-            observacoes_final.append("O passeio externo foi objeto de verificação parcial desta vistoria, uma vez que a calçada não apresenta a largura mínima exigida para a aplicação integral da NBR 9050, conforme entendimento manifestado em Nota Técnica DIACESS/SUOB/DF LEGAL, de 28 de setembro de 2020. ")
-
-
-
-
-        # Após adicionar todos os itens à lista, você pode juntá-los em uma única string, se necessário
-        observacoes_final_str = " ".join(observacoes_final)
-        
-        # --- Exibição do Resumo ---
-        relatorio_texto = ""
-        st.markdown("### Pendências")
-        if resumo_final:
-            relatorio_texto += "Pendências:\n\n"
-            for item in resumo_final:
-                st.write(f"- {item}")
-                relatorio_texto += f"- {item}\n"
-        else:
-            st.info("Nenhuma condição para o resumo foi selecionada.")
-        
-        # --- Exibição das Observações ---
-        st.markdown("### Observações")
-        if observacoes_final_str:
-            st.write(observacoes_final_str)
-            relatorio_texto += "\n\nObservações:\n\n" + observacoes_final_str
-        else:
-            st.info("Nenhuma observação adicional foi selecionada.")
-
-        # --- Botões de Ação ---
-        st.divider()
-        
-        col1, col2 = st.columns(2) # Mantido para consistência de layout, mas apenas um botão será usado.
-
-        # Botão para gerar e baixar o PDF
-        with col1: # Usando a primeira coluna
-
-            def create_txt(resumo, observacoes):
-        # Criar conteúdo do texto formatado
-                txt_content = f"RELATÓRIO DE VISTORIA\n"
-                txt_content += f"Data: {date.today()}\n"
-                txt_content += "=" * 60 + "\n\n"
-                
-                # Seção de Pendências
-                if resumo:
-                    txt_content += "PENDÊNCIAS:\n"
-                    txt_content += "-" * 30 + "\n"
-                    for item in resumo:
-                        txt_content += f"• {item}\n"
-                    txt_content += "\n"
-                else:
-                    txt_content += "PENDÊNCIAS: Nenhuma pendência identificada.\n\n"
-                
-                # Seção de Observações
-                if observacoes:
-                    txt_content += "OBSERVAÇÕES:\n"
-                    txt_content += "-" * 30 + "\n"
-                    for obs in observacoes:
-                        txt_content += f"{obs}\n\n"
-                else:
-                    txt_content += "OBSERVAÇÕES: Nenhuma observação adicional.\n"
-                
-                return txt_content
-
-            # Gerar conteúdo do TXT
-            txt_content = create_txt(resumo_final, observacoes_final)
-            
-            st.download_button(
-                label="📥 Gerar TXT",
-                data=txt_content,
-                file_name=f"relatorio_vistoria_{date.today()}.txt",
-                mime="text/plain",
-                help="Clique para baixar o relatório em formato texto"
-            )
-
-
-
-
 def consultar_cipu(cipu):
     api_url = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CADASTRO_TERRITORIAL/FeatureServer/10/query"
     params = {
         "where": f"pu_cipu = {int(cipu)}",
-        "outFields": "pu_cipu,x,y",
+        "outFields": "pu_cipu,x,y,pu_end_cart,pu_end_usual,pn_norma_vg",
         "returnGeometry": "true",
         "f": "json"
     }
@@ -1615,33 +1846,56 @@ def consultar_cipu(cipu):
         if x and y:
             lon, lat = transformer.transform(x, y)
             results.append({
-                "cipu": f["attributes"]["pu_cipu"],
+                "cipu": f["attributes"].get("pu_cipu"),
                 "lat": round(lat, 6),
-                "lon": round(lon, 6)
+                "lon": round(lon, 6),
+                "end_cart": f["attributes"].get("pu_end_cart", ""),
+                "end_usual": f["attributes"].get("pu_end_usual", ""),
+                "norma_vg": f["attributes"].get("pn_norma_vg", "")
             })
     return results
 
+
+# --- Gerar KML simples (somente CIPU) ---
 def gerar_kml(dados):
-    kml = ['<?xml version="1.0" encoding="UTF-8"?>',
-           '<kml xmlns="http://www.opengis.net/kml/2.2">',
-           '<Document>']
+    kml = simplekml.Kml()
     for d in dados:
-        cipu_str = str(int(d['cipu']))  # <<< garante sem casas decimais
-        kml.append(f"""
-        <Placemark>
-          <name>{cipu_str}</name>
-          <Point>
-            <coordinates>{d['lon']},{d['lat']},0</coordinates>
-          </Point>
-        </Placemark>
-        """)
-    kml.append("</Document></kml>")
-    return "\n".join(kml)
+        ponto = kml.newpoint(
+            name=str(int(d["cipu"])),
+            coords=[(d["lon"], d["lat"])]
+        )
 
-with st.expander("**Exportar lista CIPU para Google Earth e Google**", expanded=False):
-    # --- Interface Streamlit ---
+        ponto.description = (
+            f"Endereço cartográfico: {d.get('end_cart', '')}\n"
+            f"Endereço usual: {d.get('end_usual', '')}\n"
+            f"Norma VG: {d.get('norma_vg', '')}"
+        )
+    return kml.kml()
 
-    cipu_list = st.text_area("Insira uma lista de CIPUs (Um por linha - Dê ENTER após inserir cada um)").splitlines()
+
+# --- Gerar KML com nome ---
+def gerar_kml_com_nome(coordenadas):
+    kml = simplekml.Kml()
+    for coord in coordenadas:
+        nome_marcador = coord.get("nome", f"CIPU {coord['cipu']}")
+        ponto = kml.newpoint(
+            name=nome_marcador,
+            coords=[(coord["lon"], coord["lat"])]
+        )
+        ponto.description = (
+            f"CIPU: {coord['cipu']}\n"
+            f"Nome: {coord.get('nome', 'N/A')}\n"
+            f"Endereço cartográfico: {coord.get('end_cart', '')}\n"
+            f"Endereço usual: {coord.get('end_usual', '')}\n"
+            f"Norma VG: {coord.get('norma_vg', '')}"
+        )
+    return kml.kml()
+
+
+# --- Interface Streamlit ---
+with st.expander("**Exportar lista CIPU para Google Earth e Google Maps**", expanded=False):
+    st.markdown("**Exportar para o Google Earth somente com o CIPU:**")
+    cipu_list = st.text_area("Insira uma lista de CIPUs (Um por linha)").splitlines()
 
     if st.button("Consultar coordenadas"):
         todos = []
@@ -1652,41 +1906,65 @@ with st.expander("**Exportar lista CIPU para Google Earth e Google**", expanded=
         st.success(f"{len(todos)} coordenadas obtidas!")
 
     if "cipu_coords" in st.session_state and st.session_state["cipu_coords"]:
-        #st.write(st.session_state["cipu_coords"])
         if st.button("Exportar para KML", type="primary"):
             kml = gerar_kml(st.session_state["cipu_coords"])
             st.download_button("Baixar KML", kml, file_name="cipu_export.kml")
-    if "cipu_coords" in st.session_state and st.session_state["cipu_coords"]:
 
-        # Criar DataFrame organizado
         df = pd.DataFrame(st.session_state["cipu_coords"])
-        df["cipu"] = df["cipu"].astype(int)  # garante que não aparece 123.0
-
-        # Coluna extra com coordenada já no formato "lat, lon"
+        df["cipu"] = df["cipu"].astype(int)
         df["coordenada"] = df["lat"].astype(str) + ", " + df["lon"].astype(str)
-
-
-        # Mostrar tabela
         st.dataframe(df, use_container_width=True)
-    def gerar_link_google_maps(dados):
-        base_url = "https://www.google.com/maps/dir/"
-        coords = [f"{d['lat']},{d['lon']}" for d in dados]
-        return base_url + "/".join(coords)
 
-    if "cipu_coords" in st.session_state and st.session_state["cipu_coords"]:
+        def gerar_link_google_maps(dados):
+            base_url = "https://www.google.com/maps/dir/"
+            coords = [f"{d['lat']},{d['lon']}" for d in dados]
+            return base_url + "/".join(coords)
+
         link = gerar_link_google_maps(st.session_state["cipu_coords"])
         st.markdown(f"📍 [Abrir rota no Google Maps]({link})", unsafe_allow_html=True)
 
+    st.divider()
+    st.markdown("**Exportar para o Google Earth com o nome do ponto**")
+    st.write("Formato: `CIPU; Nome` — um por linha. Exemplo:")
+    st.write("123;HBT 500")
+    st.write("5678;HBT 90")
 
+    cipu_nome_list = st.text_area("Um por linha").splitlines()
 
+    if st.button("Consultar coordenadas (CIPU + Nome)"):
+        todos = []
+        for linha in cipu_nome_list:
+            if ";" in linha:
+                partes = linha.split(";")
+                cipu = partes[0].strip()
+                nome = partes[1].strip() if len(partes) > 1 else f"CIPU {cipu}"
 
+                if cipu.isdigit():
+                    coords = consultar_cipu(cipu)
+                    for c in coords:
+                        c["nome"] = nome
+                    todos.extend(coords)
 
+        st.session_state["cipu_nome_coords"] = todos
+        st.success(f"{len(todos)} coordenadas obtidas com nome!")
 
+    if "cipu_nome_coords" in st.session_state and st.session_state["cipu_nome_coords"]:
+        if st.button("Exportar para KML (com nome)", type="primary"):
+            kml = gerar_kml_com_nome(st.session_state["cipu_nome_coords"])
+            st.download_button("Baixar KML", kml, file_name="cipu_nome_export.kml")
 
+        df2 = pd.DataFrame(st.session_state["cipu_nome_coords"])
+        df2["cipu"] = df2["cipu"].astype(int)
+        df2["coordenada"] = df2["lat"].astype(str) + ", " + df2["lon"].astype(str)
+        st.dataframe(df2, use_container_width=True)
 
+        def gerar_link_google_maps_nome(dados):
+            base_url = "https://www.google.com/maps/dir/"
+            coords = [f"{d['lat']},{d['lon']}" for d in dados]
+            return base_url + "/".join(coords)
 
-
-
+        link2 = gerar_link_google_maps_nome(st.session_state["cipu_nome_coords"])
+        st.markdown(f"📍 [Abrir rota no Google Maps (CIPU + Nome)]({link2})", unsafe_allow_html=True)
 
 ###perfil
 with st.expander("**Perfil de elevação**", expanded=False):
@@ -1723,7 +2001,7 @@ with st.expander("**Perfil de elevação**", expanded=False):
         map_center = [last_point[1], last_point[0]]
 
     # Cria o mapa principal (único) do perfil de elevação
-    m_perfil = folium.Map(location=map_center, zoom_start=st.session_state.zoom_level, tiles="Esri.WorldImagery", max_zoom=19)
+    m_perfil = folium.Map(location=map_center, zoom_start=st.session_state.zoom_level, tiles="Esri.WorldImagery", max_zoom=23)
 
     # Adiciona o cursor crosshair personalizado
     m_perfil.get_root().header.add_child(
@@ -2047,3 +2325,322 @@ with st.expander("**Perfil de elevação**", expanded=False):
                     
             except Exception as e:
                 st.error(f"Ocorreu um erro: {str(e)}")
+
+### gerar mapa do lote
+with st.expander("**Perímetro do Lote - Planta com cotas**", expanded=False):
+    st.write("Observação: podem ocorrer pequenas imprecisões, da ordem de alguns centímetros.")
+
+    # Recupera o CIPU e a geometria do lote selecionado (já carregados anteriormente)
+    if st.session_state.get("all_general_data"):
+        selected_data = st.session_state.all_general_data[st.session_state.selected_feature_index]
+        pu_cipu = selected_data.get("cipu")
+        geometry = selected_data.get("geometry")
+    else:
+        pu_cipu = None
+        geometry = None
+
+   
+    # Botão principal
+    if st.button("Gerar Planta", key="gerar_planta"):
+        if not geometry or not pu_cipu:
+            st.warning("Nenhum CIPU carregado. Primeiro realize a pesquisa do imóvel.")
+        else:
+
+            # Função Haversine (graus -> metros)
+            def haversine_metros(lon1, lat1, lon2, lat2):
+                R = 6371000
+                lon1_r, lat1_r, lon2_r, lat2_r = map(radians, [lon1, lat1, lon2, lat2])
+                dlon = lon2_r - lon1_r
+                dlat = lat2_r - lat1_r
+                a = sin(dlat/2)**2 + cos(lat1_r) * cos(lat2_r) * sin(dlon/2)**2
+                c = 2 * atan2(sqrt(a), sqrt(1 - a))
+                return R * c
+
+            # Distância Euclidiana (quando já está em metros)
+            def euclidiana_metros(x1, y1, x2, y2):
+                return sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
+            # Extrair coordenadas da geometria (rings, paths, etc.)
+            coords = []
+            if "rings" in geometry:
+                ring = geometry["rings"][0]
+                for pt in ring:
+                    coords.append((pt[0], pt[1]))
+            elif "paths" in geometry:
+                for path in geometry["paths"]:
+                    for pt in path:
+                        coords.append((pt[0], pt[1]))
+            elif "x" in geometry and "y" in geometry:
+                coords.append((geometry["x"], geometry["y"]))
+            else:
+                st.warning("Geometria em formato não tratado.")
+                coords = []
+
+            if not coords:
+                st.warning("Nenhuma coordenada extraída da geometria.")
+            else:
+                if len(coords) > 1 and coords[0] == coords[-1]:
+                    coords = coords[:-1]
+
+                sample_x, sample_y = coords[0]
+                em_graus = (abs(sample_x) <= 180 and abs(sample_y) <= 90)
+
+                tipo_coord = "Geográficas (graus)" if em_graus else "UTM / Métricas (metros)"
+
+
+                segs = []
+                n = len(coords)
+                perimetro = 0.0
+
+                for i in range(n):
+                    x1, y1 = coords[i]
+                    x2, y2 = coords[(i + 1) % n]
+                    dist = haversine_metros(x1, y1, x2, y2) if em_graus else euclidiana_metros(x1, y1, x2, y2)
+                    perimetro += dist
+                    segs.append({
+                        "lado": f"{i+1}",
+                        "x1": x1, "y1": y1,
+                        "x2": x2, "y2": y2,
+                        "dist_m": dist,
+                        "x_mid": (x1 + x2) / 2,
+                        "y_mid": (y1 + y2) / 2
+                    })
+
+                # Tabela de segmentos
+                df_segs = pd.DataFrame([{
+                    "lado": s["lado"],
+                    "x1": s["x1"], "y1": s["y1"],
+                    "x2": s["x2"], "y2": s["y2"],
+                    "dist_m": round(s["dist_m"], 3)
+                } for s in segs])
+
+                xs = [p[0] for p in coords] + [coords[0][0]]
+                ys = [p[1] for p in coords] + [coords[0][1]]
+
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=xs,
+                    y=ys,
+                    mode="lines+markers+text",
+                    text=[str(i+1) for i in range(len(coords))] + [""],
+                    textposition="top center",
+                    line=dict(width=2, color='blue'),
+                    marker=dict(size=7, color='red'),
+                ))
+
+                # Anotações de distâncias
+                for s in segs:
+                    fig.add_annotation(
+                        x=s["x_mid"],
+                        y=s["y_mid"],
+                        text=f'{s["dist_m"]:.1f} m',
+                        showarrow=False,
+                        font=dict(size=11, color='black', weight='bold'),
+                        # Caixa de fundo para melhorar a leitura
+                        bgcolor="yellow", 
+                        bordercolor="black",
+                        borderwidth=0.5,
+                        borderpad=2,
+                    )
+
+                fig.update_yaxes(scaleanchor="x", scaleratio=1)
+                x_min, x_max = min(xs), max(xs)
+                y_min, y_max = min(ys), max(ys)
+                dx = x_max - x_min
+                dy = y_max - y_min
+                margem = max(dx, dy) * 0.05 if max(dx, dy) > 0 else 0.00005
+                fig.update_xaxes(range=[x_min - margem, x_max + margem])
+                fig.update_yaxes(range=[y_min - margem, y_max + margem])
+
+                fig.update_layout(
+                    title=f"Geometria do CIPU {pu_cipu} (em graus)" if em_graus else f"Geometria do CIPU {pu_cipu} (em metros)",
+                    xaxis_title="X",
+                    yaxis_title="Y",
+                    width=800,
+                    height=700,
+                    plot_bgcolor="white",
+                    showlegend=False
+                )
+                #st.write(df_segs)
+                #st.write(coords)
+                st.plotly_chart(fig, use_container_width=True)
+                st.markdown(f"**Perímetro total:** {perimetro:.2f} m")
+
+    else:
+        st.info("Primeiro realize a pesquisa do imóvel na etapa **Parâmetros Urbanísticos.**")
+
+############# relatório de vistoria ##########
+with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
+    # --- Perguntas do Resumo Final ---
+    
+    st.radio("**1) Existe rampa (cunha) na entrada de veículos?**", options=['Sim', 'Não'], key='rampa', horizontal=True)
+    st.radio("**2) Existe telhado em área pública?**", options=['Sim', 'Não'], key='telhado', horizontal=True)
+    st.radio("**3) Falta Placa de Endereçamento?**", options=['Sim', 'Não'], key='endereco', horizontal=True)
+    st.radio("**4) Área impermeável onde foi previsto permabilidade?**", options=['Sim', 'Não'], key='obs_area_verde', horizontal=True) 
+    st.radio("**5) Falta calçada ou está irregular?**", options=['Sim', 'Não'], key='falta_calcada', horizontal=True) 
+
+    st.divider()
+
+    # --- Campo de Observações (Seleção única) ---
+    st.subheader("Observações")
+    
+    opcoes_obs = {
+        "Art 151": "Trata-se de processo de Habite-se de Regularização, conforme ATESTADO DE HABILITAÇÃO DE REGULARIZAÇÃO, embasado no ART.151 da LEI Nº 6.138/18, sendo, portanto, a vistoria restrita à verificação da consonância do imóvel executado com o licenciado através do projeto de arquitetura visado.",
+        "Art 153": "Trata-se de processo de Habite-se de Regularização, conforme ATESTADO DE HABILITAÇÃO DE REGULARIZAÇÃO, embasado no ART.153 da LEI Nº 6.138/18, sendo, portanto, a vistoria restrita à verificação da consonância do imóvel executado com o licenciado através do projeto de arquitetura depositado. Obra comprovadamente concluída há mais de cinco anos. Indevida a cobrança da Taxa de Execução de Obras - TEO. Parecer técnico UREC/DF LEGAL de 05/10/2020 - Processo SEI 04017-00015495/2020-87",
+        "Alvará 7 dias": "Vistoria restrita à verificação da consonância do imóvel executado com o licenciado pelo Alvará de Construção supracitado, referente ao projeto de arquitetura depositado conforme Termo de Responsabilidade e Cumprimento de Normas, TRCN, com base na Lei 6.412/2019 e Decreto 40.302/2019",
+        "Alvarás antigos (2018<)": "Vistoria restrita à verificação da consonância do imóvel executado com o licenciado pelo Alvará de Construção supracitado, referente ao projeto de arquitetura visado."
+    }
+    
+    st.radio(
+        "Selecione uma opção para o campo 'Observações':",
+        options=list(opcoes_obs.keys()),
+        format_func=lambda x: x if x else "Nenhuma",
+        key='observacoes_selecionadas'
+    )
+
+    st.radio("Nota Técnica para as calçadas do Park Way, Chácaras do Lago Sul, SMDB e SMLN", options=['Sim', 'Não'], key='calcada_parway', horizontal=True) 
+    st.radio("Nota Técnica para as calçadas do Condomínio Verde do JB", options=['Sim', 'Não'], key='calcada_verde', horizontal=True) 
+    st.radio("Nota sobre a Metragem do imóvel", options=['Sim', 'Não'], key='obs_metragem', horizontal=True)  
+    st.radio("Nota sobre poda de árvore", options=['Sim', 'Não'], key='obs_poda', horizontal=True)  
+    st.radio("Nota sobre calçada", options=['Sim', 'Não'], key='calcada_pequena', horizontal=True) 
+ 
+ 
+
+    st.divider()
+
+    # --- Campo Livre ---
+    st.subheader("Informações Adicionais (Resumo)")
+    st.text_area(
+        "Adicione qualquer informação relevante ao resumo final:",
+        key='texto_livre',
+        height=100
+    )
+
+    st.divider()
+    
+    # --- Botão para gerar o relatório ---
+    if st.button("**Gerar Relatório**"):
+        st.session_state.relatorio_gerado = True
+
+    # --- Bloco de Resumo Final e Ações ---
+    if st.session_state.relatorio_gerado:
+        st.subheader("Resumo da Vistoria")
+        
+        # --- Lógica de geração do resumo e observações ---
+        resumo_final = []
+        observacoes_final = []
+        
+        if st.session_state.rampa == "Sim":
+            resumo_final.append("O responsável deverá demolir a rampa (cunha) instalada no acesso aos veículos invadindo a pista de rolamento. Art. 10 inciso VI do Decreto 38047/2017.")
+        
+        if st.session_state.telhado == "Sim":
+            resumo_final.append("O telhado está ultrapassando o limite do lote. O interessado deverá retirar a parte do telhado que avança sobre área pública e providenciar a devida coleta da água pluvial de modo a não lança-la diretamente no passeio (calçada). Art. 62, inciso III, da Lei nº 6.138/2018, - a edificação não extrapole os limites do lote ou da projeção -.")
+        
+        if st.session_state.endereco == "Sim":
+            resumo_final.append("Não consta placa de endereçamento. De acordo com o Art. 163 do Descreto Nº 43.056, DE 03 DE MARÇO DE 2022, na vistoria para subsidiar a emissão da carta de habite-se ou do atestado de conclusão, deve-se verificar: a instalação de placa de endereçamento legível, quando exigível.")
+        
+        if st.session_state.obs_area_verde == "Sim":
+            resumo_final.append("Foi constado que existe área impermeável (calçada) nos locais indicados, no projeto arquitetônico, onde era previsto área permeável. De acordo com o Art. 163 do Descreto Nº 43.056, DE 03 DE MARÇO DE 2022, os parâmetros urbanísticos do projeto habilitado ou depositado a serem observados são: XII - taxa de permeabilidade ou de área verde")
+        
+        if st.session_state.falta_calcada == "Sim":
+            resumo_final.append("A largura mínima das rotas acessíveis deve ser de 1,20 m, admitindo-se redução pontual para até 0,90 m, limitada a trechos com extensão máxima de 0,80 m, conforme a NBR 9050. A calçada deverá ainda possuir superfície antiderrapante, com piso regular, na altura do meio-fio e de forma contínua, sem interrupção do passeio para o acesso de veículos para a garagem, e com inclinação transversal máxima de 3%.")
+        
+
+
+
+
+        if st.session_state.texto_livre:
+            resumo_final.append(st.session_state.texto_livre)
+
+
+
+            
+        if st.session_state.observacoes_selecionadas:
+            # Use .append() para adicionar o valor à lista
+            observacoes_final.append(opcoes_obs[st.session_state.observacoes_selecionadas])
+
+        if st.session_state.calcada_parway == "Sim":
+            observacoes_final.append("De acordo com a Nota Técnica N°1/2025-DF LEGAL/ SECEX/ UACESS, para obras em unidades de lotes no Park Way, Chácaras do Lago Sul, SMDB e SMLN, os itens 18.i e 18.j da NGB 118/97 e 18.n da NGB 161/98 foram revogados pela LUOS, passando a responsabilidade da execução da área comum (inclusive calçada) para o Condomínio, conforme estabelecido no Código de Obras e Edificações do Distrito Federal e na Convenção e Instituição de Condomínio de cada lote específico. Portanto, as calçadas internas ao lote não serão cobradas da última unidade quando da solicitação da Vistoria de Habite-se.")
+
+        if st.session_state.calcada_verde == "Sim":
+            observacoes_final.append("De acordo com a Nota Técnica nº.30/2023-DF-LEGAL/SUOB/COFIS/DIACESS, de 17/03/2023, o Condomínio Verde será responsável por executar ou reconstruir, no final da obra de urbanização, todas as calçadas contíguas às testadas dos lotes, conforme determina o inciso VIII, do artigo 15, da Lei nº 6.138/2018, atendendo à acessibilidade das áreas comuns e áreas lindeiras.")
+
+        if st.session_state.obs_metragem == "Sim":
+            observacoes_final.append("Ressaltamos que a área construída é declarada pelo Responsável Técnico, não cabendo a esta fiscalização afirmar se a área construída está correta em sua metragem final. ")
+
+        if st.session_state.obs_poda == "Sim":
+            observacoes_final.append("Este laudo não constitui autorização para poda ou supressão de árvores.")
+
+        if st.session_state.calcada_pequena == "Sim":
+            observacoes_final.append("O passeio externo foi objeto de verificação parcial desta vistoria, uma vez que a calçada não apresenta a largura mínima exigida para a aplicação integral da NBR 9050, conforme entendimento manifestado em Nota Técnica DIACESS/SUOB/DF LEGAL, de 28 de setembro de 2020. ")
+
+
+
+
+        # Após adicionar todos os itens à lista, você pode juntá-los em uma única string, se necessário
+        observacoes_final_str = " ".join(observacoes_final)
+        
+        # --- Exibição do Resumo ---
+        relatorio_texto = ""
+        st.markdown("### Pendências")
+        if resumo_final:
+            relatorio_texto += "Pendências:\n\n"
+            for item in resumo_final:
+                st.write(f"- {item}")
+                relatorio_texto += f"- {item}\n"
+        else:
+            st.info("Nenhuma condição para o resumo foi selecionada.")
+        
+        # --- Exibição das Observações ---
+        st.markdown("### Observações")
+        if observacoes_final_str:
+            st.write(observacoes_final_str)
+            relatorio_texto += "\n\nObservações:\n\n" + observacoes_final_str
+        else:
+            st.info("Nenhuma observação adicional foi selecionada.")
+
+        # --- Botões de Ação ---
+        st.divider()
+        
+        col1, col2 = st.columns(2) # Mantido para consistência de layout, mas apenas um botão será usado.
+
+        # Botão para gerar e baixar o PDF
+        with col1: # Usando a primeira coluna
+
+            def create_txt(resumo, observacoes):
+        # Criar conteúdo do texto formatado
+                txt_content = f"RELATÓRIO DE VISTORIA\n"
+                txt_content += f"Data: {date.today()}\n"
+                txt_content += "=" * 60 + "\n\n"
+                
+                # Seção de Pendências
+                if resumo:
+                    txt_content += "PENDÊNCIAS:\n"
+                    txt_content += "-" * 30 + "\n"
+                    for item in resumo:
+                        txt_content += f"• {item}\n"
+                    txt_content += "\n"
+                else:
+                    txt_content += "PENDÊNCIAS: Nenhuma pendência identificada.\n\n"
+                
+                # Seção de Observações
+                if observacoes:
+                    txt_content += "OBSERVAÇÕES:\n"
+                    txt_content += "-" * 30 + "\n"
+                    for obs in observacoes:
+                        txt_content += f"{obs}\n\n"
+                else:
+                    txt_content += "OBSERVAÇÕES: Nenhuma observação adicional.\n"
+                
+                return txt_content
+
+            # Gerar conteúdo do TXT
+            txt_content = create_txt(resumo_final, observacoes_final)
+            
+            st.download_button(
+                label="📥 Gerar TXT",
+                data=txt_content,
+                file_name=f"relatorio_vistoria_{date.today()}.txt",
+                mime="text/plain",
+                help="Clique para baixar o relatório em formato texto"
+            )

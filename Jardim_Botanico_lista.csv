@@ -1,0 +1,77 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+2701;RE 2(1);35000<a≤45000;0,76;0,76;42;41;9,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2702;RE 2;190000<a≤265000;0,6;0,6;35;40;9,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2703;RE 3 - Mangueiral;60000<a≤120000;0,5;0,5;35;34;15,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2704;RO 1;300<a≤1600;1,5;1,5;60;10;9,5;3;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2705;RO 1;1600<a≤3000;1,5;1,5;70;20;9,5;3;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2706;RO 1 - Avenida do Sol;300<a≤1500;1;1;60;30;9,5;5;2;2;unilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2707;RO 1 - Chapéu de Pedra;400<a≤1000;1,2;1,2;60;30;9,5;3;1,5;1,5;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2708;RO 1 - Jardim Botânico II(2);300<a≤4000;1,5;1,5;80;15;9,5;3;-;1,5;unilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2709;RO 1 - Jardim Botânico IV;400<a≤3000;2;2;60;10;10,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2710;RO 1 - Morada de Deus / LH1(3);300<a≤1500;1,4;1,4;70;20;9,5;3;1,5;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2711;RO 1 - Morada de Deus / LH2(4);400<a≤2800;1,4;1,4;60;30;9,5;3;1,5;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2712;RO 1 - Morada de Deus / LH3(5);400<a≤2000;1,4;1,4;50;40;9,5;3;1,5;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2713;RO 1 - Ouro Vermelho(6) (7) (8);300<a≤2000;1;1;45;40;9,5;5;3;3;unilateral;proibida;-;ponto médio da edificação;permitido-tipo 1
+2714;RO 1 - Parque do Mirante;300<a≤2500;1;1;60;40;9,5;3;1,5;1,5;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2715;RO 1 - Querência;300<a≤700;0,8;0,8;50;40;9,5;3;5;1,5;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2716;RO 1 - Santa Mônica;650<a≤4000;1,2;1,2;60;40;9,5;3;3;2;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2717;RO 1 - São Bartolomeu;a≤2500;2;2;80;10;10,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2718;CSIIR 1 NO;600<a≤900;1;2;70;10;12;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+2719;CSIIR 1 NO;2000<a≤5000;1;1,5;70;20;12;3;-;1,5;unilateral;proibida;-;ponto médio da edificação;permitido-tipo 1
+2720;CSIIR 1;400<a≤3700;2;2;60;20;15,5;5;3;2;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2721;CSIIR 1 - Parque do Mirante;a≤1500;1;2,5;100;-;22,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+2722;CSIIR 2 NO;2000<a≤6000;1,4;1,4;60;30;12;3;1,5;1,5;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2723;CSIIR 2;a≤300;1;4;100;-;15,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2724;CSIIR 2;300<a≤1500;1;2;70;30;15,5;3;-;1,5;unilateral;proibida;-;ponto médio da edificação;permitido-tipo 1
+2725;CSIIR 2 - Jardim Botânico IV;300<a≤2000;1;4;80;10;15,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2726;CSIIR 3 (9);a≤200;2;3;100;-;12;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+2727;CSIIR 3(9);700<a≤2700;1,5;4;100;-;15,5;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+2728;CSIIR 3 - Santa Mônica(10);a≤250;1,2;1,2;60;40;12;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 2
+2729;CSIIR 3 - Santa Mônica;250<a≤350;1,2;1,2;60;40;12;-;5;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+2730;CSII 1;a≤50;1,2;1,2;100;-;8,5;-;-;-;-;proibida;-;ponto médio da edificação;proibido
+2731;CSII 1;300<a≤500;1,5;1,5;100;-;8,5;-;-;-;-;proibida;-;ponto médio da edificação;proibido
+2732;CSII 1(11);700<a≤1100;3,6;3,6;100;-;15,5;-;-;-;-;proibida;obrigatória;ponto médio da edificação;permitido-tipo 1
+2733;CSII 1 - Aldeias do Cerrado;a≤900;1,8;1,8;100;-;8,5;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2734;CSII 1 - Avenida do Sol(12);2000<a≤3000;2;2;80;10;8,5;5;3;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+2735;CSII 1 - Chapéu de Pedra(12);a≤200;2;2;100;-;8,5;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+2736;CSII 1 - Mangueiral(10) (13);500<a≤4000;1;1;75;-;15,5;-;-;-;-;proibida;obrigatória;ponto médio da edificação;permitido-tipo 2
+2737;CSII 1 - Mangueiral(14);4000<a≤7000;1;1;70;25;15,5;4;4;4;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2738;CSII 1 - Ouro Vermelho;800<a≤6500;1;1;40;40;12;5;3;3;unilateral;-;-;ponto médio da edificação;permitido-tipo 1
+2739;CSII 1 - Tororó Oeste;800<a≤1500;1;2,5;60;40;29,5;-;1,5;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2740;CSII 2;a≤50;1,2;1,2;100;-;8,5;-;-;-;-;proibida;-;ponto médio da edificação;proibido
+2741;CSII 2;300<a≤500;1,5;1,5;100;-;8,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2742;CSII 2 (11);700<a≤1100;3,6;3,6;100;-;15,5;-;-;-;-;proibida;obrigatória;ponto médio da edificação;permitido-tipo 1
+2743;CSII 2;1200<a≤9500;1,2;1,2;60;20;12;3;3;3;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2744;CSII 2 - Aldeias do Cerrado(10) (15);a≤1500;2;2;100;-;8,5;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+2745;CSII 2 - Aldeias do Cerrado(16);1500<a≤3000;2;2;100;-;8,5;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2746;CSII 2 - Condomínios;a≤15000;1;2;70;15;15,5;-;-;1,5;unilateral;-;-;ponto médio da edificação;permitido-tipo 1
+2747;CSII 2 - Jardim Botânico IV;1000<a≤1500;1;4;70;10;15,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2748;CSII 2 - Mangueiral(10) (17);1300<a≤3700;1;1;100;-;15,5;-;-;-;-;proibida;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+2749;CSII 2 - Morada de Deus;2000<a≤3000;0,8;0,8;60;30;8,5;5;5;5;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2750;CSII 2 - Morada de Deus;6000<a≤11000;2;2;60;20;15,5;5;3;2;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2751;CSII 2 - Morada de Deus / Rua do Sol Lt 11;9000<a≤10000;1;1;50;30;15,5;5;3;3;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2752;CSII 3;350<a≤1100;2,6;2,6;100;-;15,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2753;CSII 3;2000<a≤4000;1,2;1,2;70;10;12;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2754;CSII 3;10000<a≤11000;1;1;40;20;12;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2755;CSII 3 - Aldeias do Cerrado;1500<a≤6500;3;3;100;-;12;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2756;CSII 3 - Aldeias do Cerrado(18);57000<a≤58000;2,55;2,55;85;-;12;5;10;-;-;-;-;cota altimétrica média do lote;permitido-tipo 1
+2757;CSII 3 - Jardim Botânico IV;500<a≤8000;1;4;70;10;15,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2758;CSII 3 - Jardim Botânico IV;60000<a≤65000;1;2;60;30;15,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2759;CSII 3 - Mangueiral(14);3000<a≤15000;1;1;70;25;15,5;4;4;4;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2760;CSII 3 - Santa Mônica;700<a≤3000;1,4;2;70;20;15,5;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+2761;Inst;100<a≤700;1;1;100;-;5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2762;Inst;700<a≤3200;1,2;1,2;60;20;8,5;3;3;3;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2763;Inst;9000<a≤16000;1,2;1,2;60;30;8,5;5;5;5;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2764;Inst;50000<a≤70000;0,7;2;45;55;8,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2765;Inst - Avenida do Sol;a≤4000;1,2;1,2;60;30;8,5;5;3;3;lat dir;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2766;Inst - Condomínios;a≤600;1;1;100;-;8,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+2767;Inst - Condomínios;600<a≤10000;1;2;70;15;15,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2768;Inst - Etapa I;200<a≤1200;1;1,2;60;10;8,5;3;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2769;Inst - Jardim Botânico II;700<a≤6000;1;1,5;70;20;15,5;3;-;1,5;unilateral;proibida;-;ponto médio da edificação;permitido-tipo 1
+2770;Inst - Jardim Botânico III;300<a≤1600;1,5;1,5;60;10;9,5;3;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2771;Inst - Morada de Deus;1200<a≤15700;1,2;1,2;40;30;12;5;3;2;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2772;Inst - Mangueiral(19);2000<a≤5000;0,7;0,7;70;25;15,5;4;10;4;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2773;Inst - Mangueiral;8000<a≤10000;0,7;0,7;70;25;8,5;1,5;15;5;lat dir;proibida;-;ponto médio da edificação;permitido-tipo 2
+2774;Inst - Santa Mônica;a≤10000;1,4;2,6;60;30;19;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+2775;PAC 2(20);1000<a≤2000;0,25;0,5;50;-;8,5;3;1,5;4;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2776;PAC 2(20);2000<a≤3000;0,7;0,7;60;-;8,5;3;10;3;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1

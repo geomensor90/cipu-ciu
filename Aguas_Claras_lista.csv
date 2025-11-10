@@ -1,0 +1,22 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+2001;RE 3;500<a≤1000;0,5;2;70;20;43,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+2002;RE 3;2000<a≤9500;1,5;2,5;60;30;43,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2003;RE 3;35000<a≤40000;1,6;2;60;30;43,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2004;CSIIR 1 NO;1500<a≤7000;3;5;100;-;57,5;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+2005;CSIIR 1 NO;80000<a≤90000;1,2;1,2;40;30;57,5;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+2006;CSIIR 1 NO - Q 301 e Rua das Carnaúbas;400<a≤1700;1;2;70;20;22,5;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+2007;CSIIR 2 NO;750<a≤7000;3;5;100;-;57,5;-;-;-;AFR de 3,0m a partir de 12,0m de altura;-;-;ponto médio da edificação;permitido-tipo 1
+2008;CSIIR 2 NO - Q 107;2000<a≤7000;1,2;2;60;30;43,5;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+2009;CSIIR 2;1900<a≤23000;1,2;2;60;30;43,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2010;CSIIR 2 - Tipo A(1);a≤4500;1,2;2;70;20;26;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2011;CSIIR 2 - Tipo B(2);700<a≤8000;5;7;100;-;78,5;-;-;-;AFR de 5,0m a partir de 12,0m de altura;-;-;ponto médio da edificação;permitido-tipo 1
+2012;CSIIR 2 - Tipo C(3);850<a≤9500;3;5;100;-;64,5;-;-;-;AFR de 3,0m a partir de 12,0m de altura;-;-;ponto médio da edificação;permitido-tipo 1
+2013;CSIIR 3;1500<a≤65000;3;5;70;20;57,5;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+2014;CSII 1;1500<a≤5000;0,6;2;70;20;26;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2015;CSII 2(4);500<a≤1500;0,66;2,4;100;-;12;-;-;-;-;proibida;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+2016;CSII 2;2000<a≤3500;5;7;70;20;78,5;-;-;-;AFR de 5,0m a partir de 12,0m de altura;proibida;-;ponto médio da edificação;permitido-tipo 2
+2017;CSII 2;3500<a≤10000;0,6;2;60;30;26;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2018;CSII 3;10500<a≤26000;1,5;2,25;60;30;26;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2019;Inst;2000<a≤8000;1,5;2,4;60;30;15,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2020;PAC 1(5) (6);900<a≤1000;0,25;0,25;25;-;8,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2021;PAC 2(6);2000<a≤7000;0,5;0,5;50;-;8,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1

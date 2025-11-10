@@ -1,0 +1,27 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+701;RE 2 - Jardins Genebra(1);500000<a≤600000;1,00;1,00;50;40;9,50;-;-;-;-;proibida;-;ponto médio da edificação;proibido
+702;RE 3;900<a≤1000;1,40;1,40;70;10;8,50;-;-;-;-;proibida;-;cota altimétrica média do lote;permitido-tipo 1
+703;RE 3 - Paranoá Parque;12500<a≤13500;1,00;1,00;40;20;15,50;3,00;3,00;3,00;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 1
+704;RO 1;a≤450;1,50;1,50;100;-;9,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+705;RO 1 - Q 7;a≤300;1,50;1,50;100;-;9,50;-;-;-;-;proibida;-;cota altimétrica média do lote;permitido-tipo 1
+706;RO 2;a≤350;1,50;1,50;100;-;9,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+707;CSIIR 1 NO;100<a≤300;1,50;1,50;100;-;8,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+708;CSIIR 1 NO;a≤500;1,40;1,40;70;10;8,50;2,00;2,00;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+709;CSIIR 1 NO - Q 30 Cj J e Q 32 Cj N;100<a≤200;1,80;3,26;100;-;15,50;-;-;-;-;-;-;ponto medio da testada frontal;permitido-tipo 1
+710;CSIIR 1 NO - Q 2;a≤350;1,50;1,50;80;-;8,50;2,00;2,00;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+711;CSIIR 2 NO;120<a≤300;1,50;1,50;100;-;19,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+712;CSIIR 2 (2);a≤700;1,80;3,60;100;-;19,00;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+713;CSIIR 2 - Tipo A(7);160<a≤650;1,80;4,00;100;-;19,00;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+714;CSIIR 2 - Q 7;200<a≤400;1,50;1,50;75;-;8,50;2,00;-;-;-;proibida;-;ponto médio da testada frontal;proibido
+715;CSII 1;1400<a≤1500;1,00;1,00;60;10;8,50;5,00;5,00;4,00;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+716;CSII 1 - Jardins Genebra(8);700<a≤9000;1,00;2,00;80;10;12,00;5,00;5,00;3,00;unilateral;-;obrigatória;ponto médio da edificação;permitido-tipo 2
+717;CSII 1 - Paranoá Parque;1050<a≤3000;1,00;1,80;60;35;12,00;-;3,00;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+718;CSII 1 - Paranoá Parque;3000<a≤16000;1,00;1,80;60;35;12,00;-;5,00;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+719;CSII 2;1000<a≤3700;2,00;2,00;70;-;22,50;10,00;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+720;CSII 2 - Praça Central Lt 2;500<a≤700;2,00;2,00;100;-;8,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+721;CSII 2 - Q 7;200<a≤1500;1,50;1,50;75;10;8,50;2,00;-;-;-;proibida;-;ponto médio da edificação;proibido
+722;CSIIndR;a≤300;1,80;3,60;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+723;Inst;100<a≤480;1,50;1,50;75;10;8,50;2,00;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+724;Inst;480<a≤1000;1,20;1,20;60;10;12,00;5,00;2,00;2,00;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+725;Inst;1000<a≤3000;1,00;1,00;50;10;8,50;3,00;5,00;5,00;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+726;PAC 2(6);800<a≤2600;0,25;0,50;25;-;8,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1

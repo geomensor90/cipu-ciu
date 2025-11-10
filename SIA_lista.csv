@@ -1,0 +1,25 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+2901;CSIIR 3;a≤600;1,50;4,00;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2902;CSII 1;a≤100;3,00;3,00;100;-;12,00;-;-;-;-;-;-;cota altimétrica média do lote;permitido-tipo 1
+2903;CSII 3;500<a≤4500;1,50;2,50;70;20;19,00;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2904;CSII 3;5000<a≤60000;1,00;1,00;50;30;15,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2905;CSII 3;135000<a≤145000;0,55;1,00;55;30;8,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2906;CSII 3 - Tipo A(6);650<a≤950;1,50;2,50;100;-;19,00;-;-;-;-;proibida;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+2907;CSII 3 - SAA;1000<a≤10000;2,00;2,00;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2908;CSIIndR;a≤550;2,08;3,35;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2909;CSIIndR;550<a≤850;1,40;1,60;80;10;8,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+2910;CSIIndR - SOFN;a≤550;1,40;1,40;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2911;CSIIndR - Tipo A(7);a≤550;3,00;3,00;100;-;12,00;-;-;-;-;proibida;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+2912;CSIInd 1;a≤300;1,50;1,50;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2913;CSIInd 1;300<a≤10000;1,50;2,50;70;20;19,00;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+2914;CSIInd 1;10000<a≤16000;1,50;1,50;60;30;12,00;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2915;CSIInd 1;30000<a≤90000;1,00;1,00;50;30;12,00;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2916;CSIInd 1 - SOFN;300<a≤10000;1,00;1,00;70;20;12,00;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+2917;CSIInd 2;a≤1000;2,00;2,00;100;-;15,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+2918;CSIInd 2;1000<a≤17000;1,60;1,60;80;10;15,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2919;CSIInd 2;17000<a≤40000;0,60;1,00;50;30;15,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2920;CSIInd 3;15500<a≤120000;2,00;2,50;80;10;15,50;-;-;-;-;proibida;-;cota altimétrica média do lote;proibido
+2921;CSIInd 3;250000<a≤300000;0,80;0,80;20;30;15,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2922;Inst;a≤400;3,00;3,00;100;-;12,00;-;-;-;-;-;-;cota altimétrica média do lote;permitido-tipo 1
+2923;Inst;5500<a≤6500;1,00;1,00;50;30;8,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2924;PAC 2(5);3000<a≤5000;0,50;0,50;50;-;8,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1

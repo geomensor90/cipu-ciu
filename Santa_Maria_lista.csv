@@ -1,0 +1,77 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+1301;RE 3(13);150<a≤400;3,00;3,00;100;-;15,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1302;RE 3;700<a≤2500;1,40;4,00;60;30;29,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1303;RE 3;26000<a≤37000;0,60;0,60;50;30;22,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1304;RO 1;a≤350;1,40;1,40;100;-;9,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1305;RO 1;350<a≤900;2,00;2,00;80;10;10,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1306;RO 1 - Santos Dumont;a≤160;0,84;0,84;40;20;9,50;5,50;9,00;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1307;RO 1 - Santos Dumont;160<a≤300;0,80;0,80;40;20;9,50;5,50;3,65;1,50;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1308;RO 2;a≤250;1,40;1,40;100;-;9,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1353;RO 2 - Santos Dumont(7);a≤160;0,84;0,84;40;20;9,50;5,50;9,00;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1354;RO 2 - Santos Dumont(7);160<a≤300;0,80;0,80;40;20;9,50;5,50;3,65;1,50;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1309;CSIIR 1 NO;a≤350;1,40;3,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1310;CSIIR 1 NO;500<a≤800;2,00;2,00;80;10;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1355;CSIIR 1 NO - Setor Meireles, Residencial Fazenda Santa Maria;20000<a≤30000;1,00;1,24;80;20;24,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1356;CSIIR 1 NO - Setor Meireles, Residencial Fazenda Santa Maria;54000<a≤55000;-;1,44;47;20;10,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1357;CSIIR 1 NO - Setor Meireles, Residencial Fazenda Santa Maria;55000<a≤56000;-;1,38;46;20;10,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1311;CSIIR 1 - Vila DVO(3);a≤350;2,00;4,00;100;-;15,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+1312;CSIIR 1;a≤400;1,40;2,70;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1313;CSIIR 1(3);700<a≤850;2,50;3,00;100;-;15,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+1314;CSIIR 1(3);850<a≤3500;2,00;4,00;70;20,00;22,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 2
+1315;CSIIR 2 NO;a≤250;1,40;1,40;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1316;CSIIR 2 NO;400<a≤900;2,00;2,50;80;10,00;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1358;CSIIR 2 NO(8) - Avenida Alagados;450<a≤5500;1,40;4,00;70;20;43,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1359;CSIIR 2 NO(9) - Avenida Alagados;600<a≤2000;1,40;4,00;60;30;36,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1317;CSIIR 2 NO;4500<a≤7200;1,00;1,00;70;20;15,50;6,00;6,00;6,00;bilateral;-;-;ponto médio da edificação;permitido-tipo 2
+1318;CSIIR 2;a≤450;1,40;4,00;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1319;CSIIR 2;450<a≤5500;1,40;4,00;70;20;43,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1320;CSIIR 2 - Vila DVO(3);a≤500;2,00;4,00;100;-;15,50;;;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+1360;CSIIR 2(10);700<a≤2500;1,40;4,00;60;30;29,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1321;CSIIR 3;a≤300;1,40;2,50;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1322;CSIIR 3 - Santos Dumont(4);a≤350;3,00;3,00;100;-;12,00;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+1323;CSIIR 3;500<a≤600;2,00;2,00;100;-;12,00;;;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1324;CSIIR 3;600<a≤2000;1,40;4,00;60;30;36,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1325;CSIIR 3 - Vila DVO;1000<a≤3000;2,00;2,00;80;10;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1361;"CSIIR 3 - Setor Meireles, Quadra La
+Torre";a≤12278;1,00;2,00;60;30;25,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1326;CSII 1;750<a≤1000;2,00;4,00;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1362;CSII 1 - Setor Meireles, Residencial Fazenda Santa Maria;1000<a≤2000;1,00;4,00;80;10;24,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1327;CSII 1;1500<a≤3000;1,40;1,40;70;20;12,00;2,00;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1328;CSII 2;a≤250;2,00;3,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1329;CSII 2;800<a≤1300;2,00;2,00;100;-;12,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1330;CSII 2 - Vila DVO(3);900<a≤2500;2,00;3,00;100;-;15,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+1331;CSII 2;1300<a≤6000;1,40;2,00;70;20;12,00;2,00;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1363;"CSII 2 - Setor Meireles, Quadra La
+Torre";a≤3827;1,00;4,00;70;20;24,00;3,00;5,00;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1364;CSII 2 (11) - Avenida Alagados;a≤10000;1,40;2,60;60;30;19,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+1332;CSII 3;a≤450;2,00;2,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1333;CSII 3;700<a≤3000;1,40;2,00;70;20;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1334;CSII 3 - Vila DVO;850<a≤2500;2,00;3,00;80;10;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1335;CSII 3 - Porto Pilar;2000<a≤37000;1,00;1,00;70;20;12,00;5,00;5,00;5,00;bilateral;-;-;ponto médio da edificação;permitido-tipo 2
+1336;CSII 3;4000<a≤6000;3,20;3,20;80;10;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1337;CSII 3;30000<a≤30500;1,40;2,00;60;30;19,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+1365;"CSII 3 - Setor Meireles, Quadra La
+Torre";5000<a≤9500;1,00;4,00;70;30;24,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1366;"CSII 3 - Setor Meireles, Quadra La
+Torre";5160a≤9364;1,00;4,00;60;30;24,00;-;5,00;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1367;CSII 3 - Setor Meireles, Q.23;4000<a≤6600;1,00;2,00;60;30;19,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1368;CSII 3 - Setor Meireles, Q.1;a≤10000;1,00;4,00;60;30;37,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1369;CSIInd R(12);a≤400;1,00;1,80;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1338;CSIInd 1;a≤400;1,00;1,80;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1339;CSIInd 1;400<a≤1000;1,40;2,40;80;10;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1340;CSIInd 1;1000<a≤4600;1,40;2,00;70;20;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1341;CSIInd 2;a≤400;1,00;3,60;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1342;CSIInd 2;1400<a≤9800;1,00;3,20;80;10;19,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1343;CSIInd 2;9800<a≤71000;1,00;3,00;60;30;19,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1344;CSIInd 2;71000<a≤277000;1,00;2,40;40;30;22,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1345;Inst - Vila DVO;250<a≤950;2,00;2,00;80;10;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1346;Inst - Vila DVO;950<a≤3500;2,00;2,00;70;20;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1347;Inst - Vila DVO;3500<a≤5000;2,00;2,00;50;30;15,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+1348;Inst;a≤10000;1,40;2,60;60;30;19,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+1349;Inst;10000<a≤35000;1,40;2,00;40;30;19,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+1370;Inst  - Setor Meireles, Residencial Fazenda Santa Maria;3000<a≤10300;1,00;4,00;90;10;24,00;1,50;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1350;PAC 1(14);a<1000;0,25;0,25;25;-;8,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1371;"PAC 1(14) - Setor Meireles Q. 23, LT
+3";a≤5100;0,50;0,50;50;-;8,50;4,00;-;4,00;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1351;PAC 2 (6);1000≤a<1900;0,25;0,50;50;-;8,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1352;PAC 2 (6);1900≤a<6600;0,50;0,50;50;-;8,50;4,00;-;4,00;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1

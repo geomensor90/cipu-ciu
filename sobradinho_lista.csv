@@ -1,0 +1,52 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+501;RE 3(12);200<a≤1200;6;6;100;-;26;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+502;RRur;a≤4000;0,3;0,3;15;85;8,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+503;RO 1;a≤250;2,25;2,25;100;-;10,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+504;RO 1;250<a≤750;2,1;2,1;70;10;10,5;3;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+505;RO 1 - DNOCS(3);a≤100;1,4;1,4;90;-;9,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+506;RO 1 - DNOCS;100<a≤500;1,4;1,4;100;-;9,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+507;RO 1 - Império dos Nobres(4);150<a≤2500;2;2;80;10;10,5;-;-;-;-;-;;ponto médio da testada frontal;permitido-tipo 1
+508;RO 1 - Alto da Boa Vista;400<a≤1200;1;1;50;40;9,5;3;1,5;1,5;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 1
+509;CSIIR 1 NO;400<a≤600;2,1;2,1;70;10;12;3;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+510;CSIIR 1(5);a≤350;2,4;3;100;-;12;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+511;CSIIR 1(5);350<a≤700;2;2;100;-;8,5;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+512;CSIIR 1 - Alto da Boa Vista;1000<a≤4000;1;4;60;30;26;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+513;CSIIR 2 NO;600<a≤800;2,5;5;100;-;19;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+514;CSIIR 2(5);a≤200;2;3;100;-;12;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+515;CSIIR 2;300<a≤380;2;4;100;-;15,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+516;CSIIR 2(5);380<a≤1250;3;3;100;-;12;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+517;CSIIR 2 - Rua 5(13);350<a≤750;6;6;100;-;29,5;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+518;CSIIR 2 - Setor Hoteleiro Bl 1, 6 e 7;200<a≤950;2,4;3;100;-;15,5;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+519;CSIIR 2 - Setor Hoteleiro Bl 2 e 4;600<a≤700;4,8;6,4;100;-;26;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+520;CSIIR 2 - Setor Hoteleiro Bl 3 e 5;950<a≤1300;3,8;4;100;-;15,5;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+521;CSIIR 2 - Alto da Boa Vista;900<a≤6300;1;4;60;30;26;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+522;CSIIR 3(4);a≤500;1;4;100;-;19;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+523;CSII 1(7);1400<a≤1600;3;3;100;-;12;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+524;CSII 1;2500<a≤2700;1,8;2,1;70;20;12;4;4;3,5;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+525;CSII 1 - Alto da Boa Vista(8);a≤300;1,6;2;80;10;12;-;-;-;-;proibida;obrigatória;ponto médio da testada frontal;permitido-tipo 2
+526;CSII 1 - DNOCS;450<a≤650;1,2;1,2;60;30;8,5;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+527;CSII 2;2500<a≤15000;1,8;1,8;60;30;12;5;5;5;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+528;CSII 2 - Setor Comercial Central;650<a≤3500;2;3;100;-;12;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+529;CSII 2 - Q 8(5);1300<a≤2500;6;6;100;-;22,5;-;-;-;-;obrigatória;-;ponto médio da edificação;permitido-tipo 1
+530;CSII 2 - Setor Hoteleiro Lt K;2600<a≤3000;0,75;0,75;50;-;8,5;6;3;4;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+531;CSII 2 - Alto da Boa Vista(8);200<a≤300;1,6;2;80;10;12;-;-;-;-;proibida;obrigatória;ponto médio da testada frontal;permitido-tipo 2
+532;CSII 2 - Alto da Boa Vista;500<a≤1200;1,8;1,8;60;30;12;3;3;-;-;proibida;-;cota altimétrica média do lote;permitido-tipo 2
+533;CSII 2 - Alto da Boa Vista(5);1200<a≤1600;1;1;100;-;5;-;-;-;-;obrigatória;-;cota altimétrica média do lote;proibido
+534;CSII 3;2400<a≤3300;1,8;2,4;60;30;15,5;5;3;3;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+535;CSII 3 - DNOCS(5);a≤300;2;2;100;-;8,5;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+536;CSII 3 - DNOCS;700<a≤1200;1,2;2;100;-;8,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+537;CSIIndR(5);a≤600;2;2,8;100;-;12;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+538;CSIIndR - Setor de Oficinas;a≤300;2;2,8;70;-;15,5;-;-;3;lat esq;-;-;ponto médio da testada frontal;permitido-tipo 2
+539;CSIInd 1;300<a≤500;1,05;1,4;70;-;8,5;-;2;-;-;-;-;cota altimétrica média do lote;permitido-tipo 2
+540;CSIInd 1;750<a≤2500;0,75;1;50;30;8,5;10;3;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+541;CSIInd 1 - Setor Industrial;400<a≤900;2;2;70;20;12;4;2,5;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+542;CSIInd 2;9000<a≤10500;2,4;2,4;60;30;15,5;10;10;5;bilateral;proibida;-;cota altimétrica média do lote;permitido-tipo 2
+543;Inst;1000<a≤18000;1,8;1,8;60;30;12;-;-;-;-;proibida;-;cota altimétrica média do lote;permitido-tipo 2
+544;Inst - Império dos Nobres;300<a≤2500;1;1;80;10;8,5;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+545;Inst - Setor Industrial;9900<a≤12100;1,8;1,8;60;30;12;-;-;5;lat dir;proibida;-;cota altimétrica média do lote;permitido-tipo 2
+546;Inst - Setor de Áreas Isoladas / Beira Rio(9);1800<a≤16000;0,5;0,5;25;40;12;5;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+547;Inst - Setor de Áreas Isoladas / Beira Rio(9);71600<a≤71800;0,25;0,25;25;50;8,5;5;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+548;Inst - Alto da Boa Vista;2000<a≤5500;1;1;50;40;8,5;5;3;2;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+549;PAC 1(14);250<a≤850;0,25;0,25;25;-;8,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+550;PAC 2(11);1450<a≤1550;0,5;0,5;50;-;8,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+551;PAC 3(11);2200<a≤2800;0,75;1,2;60;-;8,5;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1

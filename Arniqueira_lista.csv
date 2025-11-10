@@ -1,0 +1,25 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+3301;RO 1;a<300;2,00;2,00;100;-;10,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+3302;RO 1;300≤a≤500;2,00;2,00;80;10;10,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+3303;RO 2;a≤300;2,00;2,00;100;-;10,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+3304;CSIIR 1 NO;a≤100;2,00;2,50;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+3305;CSIIR 1 NO;700<a≤1000;2,00;2,00;60;30;22,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+3306;CSIIR 1(1);700<a≤1500;2,00;2,00;100;-;22,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+3307;CSIIR 1;1500<a≤2500;2,00;2,00;70;20;22,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+3308;CSIIR 2 NO;a≤500;2,00;3,00;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+3309;CSIIR 2 NO;500<a≤3000;2,00;3,00;70;20;22,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+3310;CSIIR 2 NO;3000<a≤8500;2,00;2,00;60;30;29,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+3311;CSIIR 2(1);a≤180;2,00;4,00;100;-;15,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+3312;CSIIR 2(1);180<a≤1000;2,00;3,00;100;-;36,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+3313;CSIIR 2;1000<a≤5000;2,00;3,80;70;20;36,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+3314;CSIIR 2;5000<a≤7000;2,00;2,00;60;30;29,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+3315;CSIIR 3;3000<a≤4000;2,00;2,00;70;20;29,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+3316;CSII 1;750<a≤2500;2,00;2,00;70;20;12,00;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+3317;CSIIndR;a≤600;2,00;2,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+3318;CSIInd 1;500<a≤2500;2,00;2,00;70;20;12,00;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+3319;CSIInd 1 - ADE;500<a≤12500;1,00;2,00;60;30;15,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+3320;CSIInd 2;a≤350;2,00;2,00;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+3321;CSIInd 2;350<a≤5000;2,00;2,00;80;10;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+3322;CSIInd 2;5000<a≤15000;2,00;2,00;70;20;15,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+3323;CSIInd 2;15000<a≤50000;2,00;2,00;60;30;15,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+3324;PAC 2(2);1000<a≤7000;0,50;0,50;50;-;8,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1

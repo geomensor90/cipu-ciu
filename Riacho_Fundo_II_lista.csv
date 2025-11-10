@@ -1,0 +1,28 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+2101;RE 3;1000<a≤4500;1,40;2,00;70;20;15,50;5,00;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+2102;RE 3;7500<a≤10700;1,30;1,30;50;30;15,50;3,00;3,00;3,00;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 2
+2103;RO 1;a≤350;2,00;2,00;100;-;10,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2104;RO 2;a≤380;2,00;2,00;100;-;10,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2105;CSIIR 1 NO;150<a≤350;1,40;3,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2106;CSIIR 1(1);a≤100;1,40;2,00;100;-;12,00;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+2107;CSIIR 1(1);350<a≤1200;1,40;2,00;100;-;15,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+2108;CSIIR 2 NO;a≤300;1,40;3,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2109;CSIIR 2(1);a≤780;1,40;3,00;100;-;15,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+2110;CSIIR 2(1);780<a≤5500;1,40;2,80;80;10;15,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 2
+2111;CSII 1(1);1500<a≤2500;1,40;2,10;70;20;12,00;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 2
+2112;CSII 2(1);a≤400;1,40;2,00;100;-;12,00;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+2113;CSII 2(1);400<a≤800;1,40;3,00;100;-;12,00;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+2114;CSII 2(1);800<a≤3600;1,40;2,50;80;10;15,50;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 2
+2115;CSII 2(1);7000<a≤7500;1,40;2,00;50;30;15,50;-;-;-;-;obrigatória;-;ponto médio da edificação;permitido-tipo 2
+2116;CSII 3;a≤200;1,40;2,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2117;CSII 3;500<a≤800;1,40;2,30;80;10;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+2118;CSII 3;800<a≤3500;1,40;2,50;70;20;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+2119;CSII 3;3500<a≤5000;1,40;2,40;60;30;15,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+2120;CSII 3;60000<a≤63000;1,40;1,60;40;30;15,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+2121;CSIIndR;a≤300;1,40;2,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+2122;CSIInd 1;200<a≤4500;1,40;1,40;70;10;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+2123;CSIInd 1;4500<a≤6500;1,40;2,00;50;30;15,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+2124;Inst;600<a≤3700;1,40;2,00;70;20;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+2125;Inst;10000<a≤27000;1,40;1,80;60;30;12,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+2126;PAC 2 - Tipo A(3);1000≤a≤1200;0,25;0,50;50;-;8,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+2127;PAC 2(3);2000<a≤3500;0,50;0,50;50;-;8,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1

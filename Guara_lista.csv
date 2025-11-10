@@ -1,0 +1,34 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+1001;RE 3(7);a≤1500;3,00;3,00;100;-;15,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+1002;RE 3;1500<a≤5500;3,00;3,50;60;30;43,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1003;RE 3;60000<a≤65000;1,50;2,00;60;30;29,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+1004;RE 3 - Vila Tecnológica e QE 38;400<a≤1500;3,00;3,00;100;-;22,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+1005;RO 1;a≤500;2,40;2,40;100;-;10,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1006;RO 2;a≤500;2,40;2,40;100;-;10,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+1007;CSIIR 1 NO;a≤450;3,00;3,00;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1008;CSIIR 1 NO;2500<a≤7000;3,00;3,00;60;30;19,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+1009;CSIIR 1;a≤1500;3,00;4,00;100;-;19,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1010;CSIIR 1;1500<a≤2000;2,10;2,25;70;20;19,00;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1011;CSIIR 2 NO;a≤250;3,00;3,00;100;-;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1012;CSIIR 2 NO;3500<a≤6000;3,00;3,00;60;30;43,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+1013;CSIIR 2 NO;70000<a≤75000;3,00;3,00;50;30;36,50;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1014;CSIIR 2(3);500<a≤1000;3,00;4,00;100;-;36,50;-;-;-;-;proibida;obrigatória;ponto médio da edificação;permitido-tipo 1
+1015;CSIIR 2(3);1000<a≤3500;3,00;3,00;70;20;36,50;-;-;-;-;proibida;obrigatória;ponto médio da edificação;permitido-tipo 2
+1016;CSIIR 3;7000<a≤24000;2,10;2,10;60;30;29,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1017;CSII 1;a≤1000;3,00;3,00;100;-;19,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1018;CSII 1;1000<a≤7000;1,40;2,00;70;20;22,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1019;CSII 1 - QE 50 e QE 56(3);a≤1000;3,00;4,00;100;-;19,00;-;-;-;-;proibida;obrigatória;ponto médio da edificação;permitido-tipo 1
+1020;CSII 2;a≤1000;3,00;4,00;100;-;19,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 1
+1021;CSII 2;1000<a≤2500;3,00;4,00;70;20;22,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1022;CSII 2;2500<a≤10500;0,50;4,00;60;30;26,00;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1023;CSII 2 - Tipo A(8);a≤2500;3,00;4,00;100;-;19,00;-;-;-;-;proibida;obrigatória;ponto médio da edificação;permitido-tipo 1
+1024;CSII 3;a≤1000;3,00;3,00;100;-;19,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+1025;CSII 3;1000<a≤3000;1,50;2,00;70;20;36,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1026;CSII 3;6000≤a≤35000;2,10;2,10;60;30;29,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1027;CSII 3;60000<a≤65000;1,50;1,50;60;30;15,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+1028;CSII 3;125000<a≤130000;0,90;1,00;60;30;15,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+1029;CSII 3 - Rua Quaresmeira;5500<a≤16000;0,23;2,50;35;30;29,50;-;-;-;-;proibida;-;ponto médio da edificação;proibido
+1030;CSIIndR;a≤500;3,00;3,00;80;10;15,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 2
+1031;Inst;6000<a≤25000;2,35;2,35;60;30;15,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1032;Inst;45000<a≤150000;1,00;1,00;60;30;15,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 2
+1033;PAC 2(9);1000≤a≤4000;0,25;0,50;50;-;8,50;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1

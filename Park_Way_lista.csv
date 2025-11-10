@@ -1,0 +1,6 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+2401;RE 2;17000<a≤22000;0,45;0,45;45;40;9,5;5;5;5;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 1
+2402;CSII 1;40000<a≤65000;0,45;0,45;45;40;8,5;5;5;5;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 1
+2403;Inst;1900<a≤2100;1,4;1,4;70;20;8,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1
+2404;Inst(1);6000<a≤34000;0,4;0,4;40;40;8,5;-;5;5;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 1
+2405;Inst;1800000<a≤2000000;0,04;0,04;4;90;8,5;-;-;-;-;proibida;-;ponto médio da edificação;permitido-tipo 1

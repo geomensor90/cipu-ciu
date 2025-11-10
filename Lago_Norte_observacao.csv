@@ -1,0 +1,16 @@
+﻿1; AFR e AF LAT: Ver croqui de afastamentos no órgão competente
+2; AFR: O afastamento frontal não será exigido para os lotes menores que formam o alargamento para retorno de veículos, no final da via de acesso das Quadras Internas (QI)
+3; GALERIA: Galeria obrigatória de 3,50m na divisa frontal.
+4; GALERIA: Galeria obrigatória de 3,50m nas divisas voltadas para logradouro público.
+5; GALERIA: Galeria obrigatória de 6,00m na divisa voltada para o lote vizinho.
+6; GALERIA: Galeria obrigatória de 3,00m nas divisas voltadas para logradouro público.
+7; GALERIA: Galeria obrigatória de 5,00m nas divisas voltadas para logradouro público.
+8; ALT MAX: Altura permitida será aquela necessária ao perfeito funcionamento técnico e justificada pelo projeto arquitetônico e estrutural.
+9;" UOS: Tipo A - SHIN CA 6 Lt A; SHIN QI 3 Lt F; SHIN QL 13 Lt D e SHIN QL 16 Lt Igreja"
+10;" UOS: Tipo B - SHIN QI 3 Lt A; SHIN QI 10 AE A e SHIN QI 13 Lt D"
+11; TX OCUP, CFA B e CFA M:  Taxa de ocupação e coeficiente de aproveitamento excluem a cobertura.
+12; ALT MAX:  Altura máxima inclui a cobertura.
+13;" UOS: Tipo A - SHIN EPPN QI 2 Lt 1 PAG; SHIN EPPN QI 3/4 Lt 4; SHIN EPPN QI 3/4 Lt 5; SHIN EPPN QI 5/8 Lt 8; SHIN EPPN QI 5/8 Lt 9; SHTq Trecho 2 Av Central Lt 1 e SHTq Trecho 2 Av Central Lt 2"
+14;(1) AFR e AF LAT: Ver croqui de afastamentos no órgão competente      (2) AFR: O afastamento frontal não será exigido para os lotes menores que formam o alargamento para retorno de veículos, no final da via de acesso das Quadras Internas (QI)
+15;(11) TX OCUP, CFA B e CFA M:  Taxa de ocupação e coeficiente de aproveitamento excluem a cobertura.       (12) ALT MAX:  Altura máxima inclui a cobertura.
+16;"(12) ALT MAX:  Altura máxima inclui a cobertura.        (13) UOS: Tipo A - SHIN EPPN QI 2 Lt 1 PAG; SHIN EPPN QI 3/4 Lt 4; SHIN EPPN QI 3/4 Lt 5; SHIN EPPN QI 5/8 Lt 8; SHIN EPPN QI 5/8 Lt 9; SHTq Trecho 2 Av Central Lt 1 e SHTq Trecho 2 Av Central Lt 2"

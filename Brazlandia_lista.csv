@@ -1,0 +1,35 @@
+﻿CÓDIGO;UOS;FAIXA ÁREA(m²);CFA B;CFA M;TX OCUP(%);TX PERM(%);ALT MAX;AFR;AFU;AF LAT;AF OBS;MARQUISE;GALERIA;COTA SOLEIRA;SUBSOLO
+401;RE 3(8);a≤650;3,00;3,00;100;-;15,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+402;RO 1;a≤250;1,40;1,40;100;-;9,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+403;RO 1 - Setor Tradicional;200<a≤1000;1,40;1,40;80;10;9,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+404;RO 1 - Expansão da Vila São José;a≤150;1,00;1,50;80;10;9,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+405;RO 1 - Expansão da Vila São José;150<a≤500;0,80;1,50;80;10;9,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+406;RO 2;a≤250;1,40;1,40;100;-;9,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+407;RO 2 - Setor Tradicional;a≤1000;1,40;1,40;80;10;9,50;-;-;-;-;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+408;CSIIR 1 NO;a≤200;1,40;1,40;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+409;CSIIR 1 NO;200<a≤2500;1,40;1,40;80;10;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+410;CSIIR 1(3);a≤100;1,40;2,00;100;-;12,00;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+411;CSIIR 1(4);100<a≤700;1,40;2,00;100;-;12,00;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+412;CSIIR 2 NO;a≤250;1,40;3,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+413;CSIIR 2 NO - Expansão da Vila São José;a≤600;2,00;2,00;80;10;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+414;CSIIR 2(3);a≤100;1,40;3,00;100;-;12,00;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+415;CSIIR 2(3);100<a≤300;1,40;3,00;100;-;12,00;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+416;CSIIR 2(5);400<a≤800;1,40;2,00;100;-;12,00;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+417;CSIIR 2;800<a≤1750;1,40;1,40;70;20;15,50;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+418;CSIIR 2 - Bairro Veredas(5);200<a≤1800;1,40;3,00;100;-;12,00;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+419;CSII 1;1000<a≤1500;1,40;1,40;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+420;CSII 2(3);a≤300;1,40;2,50;100;-;12,00;-;-;-;-;obrigatória;-;ponto médio da testada frontal;permitido-tipo 1
+421;CSII 2(5);500<a≤2000;1,40;2,00;100;-;12,00;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 1
+422;CSII 2 (5);4500<a≤6500;1,40;2,00;80;10;19,00;-;-;-;-;-;obrigatória;ponto médio da testada frontal;permitido-tipo 2
+423;CSII 3;1000<a≤2000;1,40;1,40;70;20;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 2
+424;CSII 3;4500<a≤10500;1,40;1,40;60;30;12,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+425;CSIIndR;a≤100;1,20;2,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+426;CSIInd 1;a≤500;1,20;1,20;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+427;CSIInd 2;2000<a≤7500;1,20;1,20;60;30;12,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+428;Inst;500<a≤1500;1,40;2,00;100;-;12,00;-;-;-;-;-;-;ponto médio da testada frontal;permitido-tipo 1
+429;Inst;1500<a≤20000;1,40;1,40;50;30;12,00;-;-;-;-;-;-;ponto médio da edificação;permitido-tipo 2
+430;Inst - Expansão da Vila São José;a≤1000;1,00;1,50;70;20;12,00;3,00;3,00;3,00;-;-;-;ponto médio da edificação;permitido-tipo 2
+431;Inst - Expansão da Vila São José;1000<a≤10000;1,00;1,50;70;20;12,00;8,00;8,00;8,00;-;-;-;ponto médio da edificação;permitido-tipo 2
+432;Inst - Expansão da Vila São José;10000<a≤18000;1,00;1,00;60;30;12,00;8,00;8,00;8,00;-;-;-;ponto médio da edificação;permitido-tipo 2
+433;PAC 1(9);a≤1000;0,25;0,25;25;-;8,50;6,00;3,00;4,00;bilateral;proibida;-;ponto médio da testada frontal;permitido-tipo 1
+434;PAC 3(7);8000<a≤10000;1,40;1,40;60;-;12,00;5,00;10,00;5,00;bilateral;proibida;-;ponto médio da edificação;permitido-tipo 1

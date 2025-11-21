@@ -773,7 +773,7 @@ if st.session_state.all_general_data:
 
 
                             st.write("Arquivo Gerado")
-                            st.subheader(f"[🧾 Clique aqui para baixar 🧾]({file_url})", unsafe_allow_html=True)
+                            st.markdown(f"### [🧾 Clique aqui para baixar 🧾]({file_url})", unsafe_allow_html=True)
 
 
 
@@ -2644,3 +2644,4 @@ with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
                 mime="text/plain",
                 help="Clique para baixar o relatório em formato texto"
             )
+

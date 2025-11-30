@@ -8,3 +8,4 @@ numpy
 scipy
 plotly
 simplekml
+streamlit-geolocation

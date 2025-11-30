@@ -16,15 +16,19 @@ import plotly.graph_objects as go
 import re
 import unicodedata
 import simplekml
-
+import plotly.graph_objects as go
+from streamlit_geolocation import streamlit_geolocation
 
 
 st.set_page_config(page_title="Ferramentas para HBT", page_icon="🌍")
-# busca pelo mapa
+
+# ----------------------------------------------------------------------
+# Bloco st.expander
+# ----------------------------------------------------------------------
 with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
     # Ponto padrão em Brasília
     default_point = [-15.793665, -47.882956]  # (lat, lon)
-
+    #default_point = [-15.827259, -47.979645]  # (lat, lon)
     st.markdown("Consulta de Lotes, Pontos e Alvarás - Raio de 50m")
 
     # Initialize session state variables if they don't exist
@@ -36,18 +40,70 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
         st.session_state.clicked_point = default_point
 
 
-    # --- Mostrar botão "Carregar coordenada CIPU" ---
-    # --- Mostrar botão "Carregar coordenada CIPU" ---
-    if st.button("Carregar coordenada CIPU"):
-        if "map_coords_list" in st.session_state and st.session_state.map_coords_list:
-            selected_coords = st.session_state.map_coords_list[st.session_state.selected_feature_index]
-            if selected_coords:
-                st.session_state.clicked_point = selected_coords
-                current_lat, current_lon = selected_coords
-                st.session_state.msg = f"✅ Coordenada CIPU carregada: {current_lat:.6f}, {current_lon:.6f}"
-        else:
-            st.session_state.msg = "⚠️ Primeiro busque um CIPU no Parâmetros Urbanísticos."
+    
+    col_geo, col_text = st.columns([0.07, 1])
+    with col_geo:
+        # Primeira Coluna: A função que renderiza o botão/componente
+        # Chamada simples para evitar o erro de sintaxe
+        location2 = streamlit_geolocation() 
 
+    with col_text:
+        # Segunda Coluna: O texto de instrução
+        # Usando st.markdown para formatar o texto e alinhá-lo
+        st.write("<<< Coordenada Atual (GPS)")
+
+            
+    # Variáveis para armazenar as coordenadas obtidas (se existirem)
+    current_geo_lat = None
+    current_geo_lon = None
+
+    # Verifica se a localização foi retornada
+    if location2:
+        latitude = location2.get('latitude')
+        longitude = location2.get('longitude')
+        
+        if latitude is not None and longitude is not None:
+            st.success("✅ Localização Encontrada!")      
+            #st.subheader("Coordenadas Atuais:")
+            col_lat, col_lon = st.columns(2)           
+            #st.write(f"**Latitude:** `{latitude}`")       
+            #st.write(f"**Longitude:** `{longitude}`")
+            current_geo_lat = latitude
+            current_geo_lon = longitude
+        #else:
+            #st.warning("⚠️ Não foi possível obter a localização. Verifique as permissões do seu navegador.")      
+    else:
+        st.info("Aguardando o clique no botão e a permissão de localização do navegador...") 
+
+
+    # --- Botões de Carregamento de Coordenadas ---
+    
+    # Cria uma coluna para os botões para melhor organização
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Botão para carregar a coordenada do CIPU
+        if st.button("Carregar coordenada CIPU"):
+            if "map_coords_list" in st.session_state and st.session_state.map_coords_list:
+                selected_coords = st.session_state.map_coords_list[st.session_state.selected_feature_index]
+                if selected_coords:
+                    st.session_state.clicked_point = selected_coords
+                    current_lat, current_lon = selected_coords
+                    st.session_state.msg = f"✅ Coordenada CIPU carregada: {current_lat:.6f}, {current_lon:.6f}"
+                else:
+                    st.session_state.msg = "⚠️ A coordenada CIPU não está disponível."
+            else:
+                st.session_state.msg = "⚠️ Primeiro busque um CIPU no Parâmetros Urbanísticos."
+
+    with col2:
+        # NOVO BOTÃO: Carrega a coordenada obtida pela geolocalização do navegador
+        if st.button("Carregar Coordenada Atual"):
+            if current_geo_lat is not None and current_geo_lon is not None:
+                st.session_state.clicked_point = (current_geo_lat, current_geo_lon)
+                st.session_state.msg = f"✅ Coordenada atual carregada: {current_geo_lat:.6f}, {current_geo_lon:.6f}"
+            else:
+                st.session_state.msg = "⚠️ Primeiro clique no Alvo acima"
+            
     # Exibe mensagem persistente
     if "msg" in st.session_state:
         st.info(st.session_state.msg)
@@ -73,11 +129,11 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
     # Add a marker for the selected point
     folium.CircleMarker(
         location=[current_lat, current_lon],
-        radius=2,                  # raio do ponto (quanto menor, mais discreto)
-        color="red",               # cor da borda
+        radius=2,              # raio do ponto (quanto menor, mais discreto)
+        color="red",           # cor da borda
         fill=True,
-        fill_color="red",          # cor de preenchimento
-        fill_opacity=1,            # opacidade total
+        fill_color="red",      # cor de preenchimento
+        fill_opacity=1,        # opacidade total
         tooltip="Ponto Selecionado"
     ).add_to(mapa)
 
@@ -102,9 +158,32 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
         attr="GDF / GeoServiços",
         show=False  # Desligado por padrão
     ).add_to(mapa)
-    
-   
 
+    # Adiciona a camada WMS das quadras (desligada por padrão)
+    folium.raster_layers.WmsTileLayer(
+        url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Publico/CADASTRO_TERRITORIAL/MapServer/WMSServer",
+        name="Quadra",
+        layers="3",
+        fmt="image/png",
+        transparent=True,
+        max_zoom=23,
+        attr="Quadra",
+        show=False  # Desligado por padrão
+    ).add_to(mapa)
+
+    # Adiciona a camada WMS das quadras (desligada por padrão)
+    folium.raster_layers.WmsTileLayer(
+        url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Publico/CADASTRO_TERRITORIAL/MapServer/WMSServer",
+        name="Conjuntos",
+        layers="4",
+        fmt="image/png",
+        transparent=False,
+        max_zoom=23,
+        attr="Conjuntos",
+        opacity=0.7,   # <--- 1.0 = máximo
+        show=False  # Desligado por padrão
+    ).add_to(mapa)    
+    
     # --- Camadas GeoJSON ---
 
     # Se lotes_geojson data exists in session state, add it to the map
@@ -148,7 +227,6 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
 
     # Display the map and capture clicks
     map_data = st_folium(mapa, height=600, width="100%")
-
 
 
     # Update coordinates if the map was clicked
@@ -222,6 +300,49 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
             st.error(f"❌ Erro na consulta ao serviço de pontos: {e}")
         except ValueError:
             st.error("❌ Erro ao decodificar a resposta JSON.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # Use um expander para "esconder" o formulário de busca
@@ -398,6 +519,12 @@ if 'show_luos_data' not in st.session_state: # Novo estado para controlar a exib
 if 'show_map' not in st.session_state: # Novo estado para controlar a exibição do mapa
     st.session_state.show_map = False
 
+
+if "show_year_selector" not in st.session_state:
+    st.session_state.show_year_selector = False
+if "selected_year" not in st.session_state:
+    st.session_state.selected_year = "2025"  # ou "2022" — escolha um padrão
+
 # # # # # # # # # # # # 
 if 'normas_data_map' not in st.session_state:
     st.session_state.normas_data_map = {}  # Cache de normas por CIPU
@@ -434,7 +561,7 @@ with st.form("search_form"):
     submitted = st.form_submit_button("Pesquisar")
 
 if submitted:
-
+    st.session_state.show_year_selector = True
     search_value = search_value.replace(".", "").replace(",", "").strip()
 
     # Reinicia os estados de exibição ao submeter uma nova pesquisa
@@ -448,6 +575,7 @@ if submitted:
         st.session_state.last_search_cipu = None
         st.session_state.map_coords_list = []
         st.session_state.selected_feature_index = 0
+        
     else:
         pass
 
@@ -465,6 +593,7 @@ if submitted:
                 st.session_state.map_coords_list = []
                 st.session_state.selected_feature_index = 0
                 st.stop()
+                st.session_state.show_year_selector = False
             where_clause = f"pu_cipu = {int(search_value)}"
 
         # Parâmetros da API principal
@@ -488,6 +617,7 @@ if submitted:
                 st.session_state.last_search_cipu = None
                 st.session_state.map_coords_list = []
                 st.session_state.selected_feature_index = 0
+                
             else:
                 #st.success(f"{len(data['features'])} resultado(s) encontrado(s).")
                 
@@ -773,7 +903,7 @@ if st.session_state.all_general_data:
 
 
                             st.write("Arquivo Gerado")
-                            st.markdown(f"### [🧾 Clique aqui para baixar 🧾]({file_url})", unsafe_allow_html=True)
+                            st.markdown(f"[🧾 Clique aqui para baixar 🧾]({file_url})", unsafe_allow_html=True)
 
 
 
@@ -933,7 +1063,7 @@ if st.session_state.all_general_data:
     ##########################
     # --- Botão para carregar Informações de Normas ---
     if selected_cipu != 'N/A':
-        if st.button("**Carregar Projeto**"):
+        if st.button("**Carregar Norma Anterior - NGBs**"):
             st.session_state.show_normas_data = True
             st.session_state.show_normas_data2 = True
             if selected_cipu not in st.session_state.normas_data_map:
@@ -1115,11 +1245,16 @@ if st.session_state.all_general_data:
                 
     
     # # # # # # # # # # # # 
-# Supondo que 'selected_cipu' seja a variável com o valor de entrada (CIPU/CIU).
+    # Supondo que 'selected_cipu' seja a variável com o valor de entrada (CIPU/CIU).
     if selected_cipu != 'N/A':
+
+        # ---- CLICOU NO BOTÃO → ativa o estado ----
         if st.button("**Carregar Cotas de Soleira**"):
             st.session_state.show_cota_soleira_data = True
-# https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/CONTROLE_URBANO/MapServer/1/query
+
+        # ---- SÓ RODA SE O ESTADO ESTIVER ATIVO ----
+        if st.session_state.get("show_cota_soleira_data", False):
+
             api_url = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Aplicacoes/COTA_SOLEIRA/MapServer/0/query"
             cotas_encontradas = []
 
@@ -1140,7 +1275,7 @@ if st.session_state.all_general_data:
             except Exception as e:
                 st.warning(f"Erro na busca por CIPU: {e}")
 
-            # --- TENTATIVA 2: Buscar por CIU (se não achou nada) ---
+            # --- TENTATIVA 2 ---
             if not cotas_encontradas:
                 ciu_value = selected_data.get('ciu', '').strip()
                 st.info("Nenhum resultado para CIPU. Tentando buscar por CIU...")
@@ -1157,38 +1292,18 @@ if st.session_state.all_general_data:
                         data = response.json()
                         if data.get("features"):
                             cotas_encontradas = [f["attributes"] for f in data["features"]]
-
-                            # --- Se não houver link, tentar recuperar pelo CIPU retornado ---
-                            for cota in cotas_encontradas:
-                                if not cota.get("cs_link") and cota.get("cs_cipu"):
-                                    try:
-                                        params_cipu_2 = {
-                                            "where": f"cs_cipu = {int(cota['cs_cipu'])}",
-                                            "outFields": "cs_cota, cs_link, cs_cipu, cs_ciu",
-                                            "returnGeometry": "false",
-                                            "f": "json"
-                                        }
-                                        resp2 = requests.get(api_url, params=params_cipu_2)
-                                        resp2.raise_for_status()
-                                        data2 = resp2.json()
-                                        if data2.get("features"):
-                                            link2 = data2["features"][0]["attributes"].get("cs_link")
-                                            if link2:
-                                                cota["cs_link"] = link2
-                                    except Exception as e:
-                                        st.warning(f"Erro recuperando link por CIPU: {e}")
                     except Exception as e:
                         st.warning(f"Erro na busca por CIU: {e}")
 
-            # Salva no cache
+            # --- Salva no cache ---
             st.session_state.cota_soleira_data_map[selected_cipu] = cotas_encontradas
 
-            # --- EXIBE RESULTADOS IMEDIATAMENTE ---
+            # ---- EXIBE ----
             if cotas_encontradas:
                 st.success(f"Encontradas {len(cotas_encontradas)} cota(s) de soleira para o lote.")
                 for idx, cota in enumerate(cotas_encontradas, start=1):
                     st.markdown(f"**Cota {idx}:** {cota.get('cs_cota', 'N/A')}")
-                    link = cota.get('cs_link')
+                    link = cota.get("cs_link")
                     if link:
                         st.markdown(f"[📄 Ver Documento]({link})")
                     else:
@@ -1196,8 +1311,6 @@ if st.session_state.all_general_data:
                     st.markdown("---")
             else:
                 st.warning("Nenhuma cota de soleira encontrada para este lote.")
-
-    # # # # # # # # # # # # 
 
     # --- Botão para carregar o Mapa ---
     if st.button("**Carregar Mapa**"):
@@ -1379,7 +1492,12 @@ if 'texto_livre' not in st.session_state:
 #################################################
 with st.expander("**Busca automática nos PDFs do Anexo III - LUOS**", expanded=False):
     
-    st.write("Data: Santa Maria e Minuta Lago Sul = LC1047/2025, restante = LC 1007/2022")
+    #st.write("Data: Santa Maria e Minuta Lago Sul = LC1047/2025, restante = LC 1007/2022")
+    if st.session_state.get("show_year_selector"):
+        st.session_state.selected_year = st.radio(
+            "Ano:", ["2022", "2025"], horizontal=True
+        )
+
     # Função para extrair e buscar observação
     def parse_e_busca_observacao(linha_encontrada, df_observacao):
         if linha_encontrada.empty:
@@ -1439,8 +1557,7 @@ with st.expander("**Busca automática nos PDFs do Anexo III - LUOS**", expanded=
             if indice < len(linha) and pd.notna(linha[indice]) and str(linha[indice]).strip() != '':
                 st.write(f"**{nome_exibicao}:** {linha[indice]}")
             else:
-                st.write(f"**{nome_exibicao}:** -")
-
+                st.write(f"**{nome_exibicao}:** -" )
 
     def normalizar_texto(txt):
         if txt is None:
@@ -1459,7 +1576,6 @@ with st.expander("**Busca automática nos PDFs do Anexo III - LUOS**", expanded=
         cipu_valor = resultado.get("cipu") or resultado.get("CIPU") or resultado.get("lu_cipu")
         if cipu_valor:
             st.session_state.selected_cipu = str(cipu_valor).strip()
-            #st.write(f"✅ CIPU armazenado no estado: {st.session_state.selected_cipu}")
         else:
             st.warning("⚠️ CIPU não encontrado no resultado inicial.")
 
@@ -1487,10 +1603,48 @@ with st.expander("**Busca automática nos PDFs do Anexo III - LUOS**", expanded=
             if nome_ra_norm in regioes_implementadas_norm:
                 try:
                     nome_arquivo_base = nome_arquivo_seguro(nome_ra)
-                    arquivo_lista = f"{nome_arquivo_base}_lista.csv"
-                    arquivo_observacao = f"{nome_arquivo_base}_observacao.csv"
 
-                    # --- 🔎 Tenta buscar código de parâmetro se estiver vazio ---
+                    # -------------------------------------------------------
+                    #   🔥 LÓGICA DE SELEÇÃO DE ARQUIVOS POR ANO — FINAL
+                    # -------------------------------------------------------
+
+                    ra_duas_normas = ["santa maria", "lago sul"]
+                    nome_ra_norm_sem_acento = normalizar_texto(nome_ra)
+                    nome_arquivo_base = nome_arquivo_seguro(nome_ra)
+
+                    # CASO 1 — RA COM 2 NORMAS (Santa Maria / Lago Sul)
+                    if nome_ra_norm_sem_acento in ra_duas_normas:
+
+                        ano_escolhido = st.session_state.get("selected_year", "2025")
+
+                        if ano_escolhido == "2022":
+                            arquivo_lista = f"{nome_arquivo_base}_lista_2022.csv"
+                            arquivo_observacao = f"{nome_arquivo_base}_observacao_2022.csv"
+
+                        else:  # 2025
+                            arquivo_lista = f"{nome_arquivo_base}_lista.csv"
+                            arquivo_observacao = f"{nome_arquivo_base}_observacao.csv"
+
+                    # CASO 2 — RAs NORMAIS (somente 2022)
+                    else:
+                        ano_escolhido = st.session_state.get("selected_year", "2022")
+
+                        # 🚫 Se o usuário tentar escolher 2025 em uma RA que não tem 2025
+                        if ano_escolhido == "2025":
+                            st.error("❌ Esta Região Administrativa não possui modificação em 2025.")
+                            st.stop()  # impede carregar arquivos e impede a busca
+
+                        # Arquivos padrão sem ano
+                        arquivo_lista = f"{nome_arquivo_base}_lista.csv"
+                        arquivo_observacao = f"{nome_arquivo_base}_observacao.csv"
+
+
+                    # DEBUG OPCIONAL
+                    #st.write(f"📁 Arquivo lista = {arquivo_lista}")
+                    #st.write(f"📁 Arquivo observação = {arquivo_observacao}")
+
+
+                    # --- Tenta buscar código de parâmetro se estiver vazio ---
                     if not codigo_parametro or str(codigo_parametro).strip().lower() in ["none", "nan", "0", "n/a", ""]:
                         selected_cipu = st.session_state.get("selected_cipu")
                         st.write("🔎 DEBUG: selected_cipu =", selected_cipu)
@@ -1559,9 +1713,10 @@ with st.expander("**Busca automática nos PDFs do Anexo III - LUOS**", expanded=
         st.info("Primeiro realize a pesquisa do imóvel na etapa anterior para carregar os dados.")
 
 
+
     st.markdown("---")
     st.subheader("Buscar diretamente pelo CIPU")
-
+    st.write("Busca sempre a LUOS atualizada. Data: Santa Maria e Minuta Lago Sul = LC1047/2025, restante = LC 1007/2022")
     # Entrada do CIPU
     cipu_input = st.text_input("Digite o número do CIPU", placeholder="Exemplo: 4515323")
 
@@ -1748,10 +1903,12 @@ with st.expander("**PDFs do Anexo II e III (LUOS) de forma manual**"):
     Ceilândia;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-8A_Ceilandia.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-8A_Ceilandia.pdf
     Guará;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-9A_Guara.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-9A_Guara.pdf
     Samambaia;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-10A_Samambaia.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-10A_Samambaia.pdf
-    Santa Maria;https://www.seduh.df.gov.br/documents/d/seduh/anexo-ii-mapa-11a-regiao-administrativa-de-santa-maria-ra-xiii-pdf;https://www.seduh.df.gov.br/documents/d/seduh/anexo-iii-quadro-11a-regiao-administrativa-de-santa-maria-ra-xiii-pdf
+    Santa Maria 2022;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-11A_Santa-Maria.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-11A_Santa-Maria.pdf
+    Santa Maria 2025;https://www.seduh.df.gov.br/documents/d/seduh/anexo-ii-mapa-11a-regiao-administrativa-de-santa-maria-ra-xiii-pdf;https://www.seduh.df.gov.br/documents/d/seduh/anexo-iii-quadro-11a-regiao-administrativa-de-santa-maria-ra-xiii-pdf
     Sao Sebastiao;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-12A_Sao-Sebastiao.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-12A_Sao-Sebastiao.pdf
     Recanto das Emas;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-13A_Recanto-das-Emas.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-13A_Recanto-das-Emas.pdf
-    Lago Sul;https://www.seduh.df.gov.br/documents/d/seduh/anexo-ii-mapa-14a-regiao-administrativa-do-lago-sul-ra-xvi-pdf;https://www.seduh.df.gov.br/documents/d/seduh/anexo-iii-quadro-14a-regiao-administrativa-do-lago-sul-ra-xvi-pdf
+    Lago Sul 2022;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-14A_Lago-Sul.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-14A_Lago-Sul.pdf
+    Lago Sul 2025;https://www.seduh.df.gov.br/documents/d/seduh/anexo-ii-mapa-14a-regiao-administrativa-do-lago-sul-ra-xvi-pdf;https://www.seduh.df.gov.br/documents/d/seduh/anexo-iii-quadro-14a-regiao-administrativa-do-lago-sul-ra-xvi-pdf
     Riacho Fundo;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-15A_Riacho-Fundo.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-15A_Riacho-Fundo.pdf
     Lago Norte;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-16A_Lago-Norte.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-16A_Lago-Norte.pdf
     Aguas Claras;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-II-%25E2%2580%2593-Mapa-17A_Aguas-Claras.pdf;https://www.seduh.df.gov.br/documents/6726485/38572899/LC1007_2022_Anexo-III-%25E2%2580%2593-Quadro-17A_Aguas-Claras.pdf
@@ -2644,4 +2801,3 @@ with st.expander("**Gerar Relatório de Vistoria**", expanded=False):
                 mime="text/plain",
                 help="Clique para baixar o relatório em formato texto"
             )
-

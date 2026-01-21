@@ -898,6 +898,7 @@ if st.session_state.all_general_data:
                     )
                 )
                 st.write(texto)
+                st.write("ATENÇÃO: É necessário exigir o termo de concessão de área pública expedida pelas Administrações Regionais e a inclusão no projeto depositado nos casos de serem passíveis de regularização.")
             st.divider()
 
         

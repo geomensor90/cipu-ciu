@@ -18,7 +18,7 @@ import unicodedata
 import simplekml
 import plotly.graph_objects as go
 from streamlit_geolocation import streamlit_geolocation
-
+import textwrap
 
 st.set_page_config(page_title="Ferramentas para HBT", page_icon="🌍")
 
@@ -834,6 +834,76 @@ if st.session_state.all_general_data:
         link_google_maps = f"https://www.google.com/maps?q={selected_data.get('latitude', 'N/A')},{selected_data.get('longitude', 'N/A')}"
         st.write(f"[🗺️ Abrir no Google Maps 🗺️]({link_google_maps})", unsafe_allow_html=True)
         st.divider()
+
+        ################## script para gerar invasão de área pública
+        # 1º - Lista de RAs para pesquisa
+        ras_lista = [
+            "Guará",
+            "Samambaia",
+            "Ceilândia",
+            "Gama",
+            "Taguatinga",
+            "Lago Sul",
+            "Lago Norte",
+            "Cruzeiro",
+            "Núcleo Bandeirante",
+            "Paranoá",
+            "Park Way",
+            "Brazlândia",
+            "Planaltina",
+            "Riacho Fundo I",
+            "Riacho Fundo II",
+            "Sobradinho"
+        ]
+
+        # Textos associados (por enquanto só 2 exemplos)
+        textos_por_ra = {
+        "Guará": """**Lei n° 249/1992** - Não foi promulgada pelo governador mas teve sanção tácita pela Câmara Legislativa (ESTÁ VIGENTE) \n Autoriza a construção de cobertura e fechamento com grades  as áreas verdes frontais aos lotes residenciais do Guará.\n - Para lotes com área de 90m², 120m² e 200m², fica autorizado cercar com grades as áreas verdes frontais, laterais e posteriores, limítrofes ao imóvel.\n - A área frontal poderá ser coberta para utilização como garagem ou varanda, vedando-se o seu fechamento como cômodo do imóvel.\n - A cerca frontal ao lote não poderá ultrapassar a linha demarcatória do passeio público.""",
+        "Samambaia": """**Lei n° 1096/1996** \n - Autoriza o proprietário de lote de terreno localizado na Região Administrativa de Samambaia a realizar o fechamento com grades das áreas frontais, laterais e posteriores limítrofes aos imóveis. \n - As áreas frontais e laterais poderão ser cobertas em até cinquenta por cento para utilização, exclusivamente, como garagem ou varanda. \n - A grade frontal do lote de terreno é limitada à linha demarcatória do passeio público. \n - A grade de área lateral do terreno de esquina não poderá superar a distância de 3m de afastamento do imóvel, respeitando-se o limite da linha demarcatória do passeio público. \n - As áreas posteriores dos lotes poderão ter utilização diversa da especificada no § 1° deste artigo, respeitada a regulamentação específica a ser baixada pelo órgão competente do Governo do Distrito Federal. \n - É vedado o desmembramento das áreas citadas nesta Lei do seu lote principal, ficando proibida a sua transformação em unidade autônoma de lote de terreno. """,
+        "Ceilândia": """**Lei n°1079/1996** \n - P SUL E P NORTE \n - Autoriza o fechamento com grades e a construção de cobertura das áreas verdes frontais e laterais dos Setores P Sul e P Norte da Região Administrativa de Ceilândia. \n - A área frontal pode ser coberta para utilização como garagem ou varanda, vedado seu fechamento para constituir cômodo do imóvel. \n - As cercas frontais e laterais não podem ultrapassar a linha demarcatória do passeio público. \n - QNM - Lei n° 1520/1997 - julgada inconstitucional ADI. """,
+        "Gama": """**Lei n° 858/1995** \n - Autoriza o fechamento com grades das áreas verdes de frente, dos fundos e das laterais limítrofes ao imóvel dos lotes residenciais da Região Administrativa do Gama. \n - A área frontal não poderá ultrapassar a linha demarcatória do passeio público. \n - A cerca da área lateral não poderá ultrapassar o limite de 03 (três) metros de afastamento do imóvel de acordo com limites estabelecidos pela Administração Regional. \n - A área cercada poderá ser utilizada pelo proprietário, vedando-se seu fechamento como cômodo, destinando, no mínimo 50% (cinquenta por cento) da mesma para área verde. """,
+        "Taguatinga": """**Leis n° 1597/1997; LC n° 192/1999; Lei n° 965/1995** - todas julgadas inconstitucionais ADI. """,
+        "Lago Sul": """**LC n° 1055/2025** \n - Autoriza a concessão de direito real de uso para ocupação de áreas públicas intersticiais contíguas aos lotes (becos) destinados ao uso residencial das Unidades de Uso e Ocupação do Solo - UOS RE 1 previstas na Lei Complementar nº 948, de 16 de janeiro de 2019, localizados nas Regiões Administrativas do Lago Sul e do Lago Norte. \n - Para efeito de aplicação desta Lei Complementar, consideram-se contíguas as áreas públicas intersticiais restritas ao espaço situado entre as dimensões dos lotes do mesmo conjunto, indicadas no Anexo I desta Lei Complementar. \n - A concessão de que trata o caput se dá para as ocupações comprovadamente existentes até a data da publicação desta Lei Complementar. \n - A concessão de direito real de uso de que trata esta Lei Complementar é vedada, ou condicionada ao atendimento de condicionantes previstas em regulamento, quando a área pública for imprescindível para: \n I - garantir o acesso de pedestres a equipamentos públicos comunitários, áreas comerciais e institucionais, \n bem como paradas de transporte coletivo; \n II - garantir a circulação para rotas acessíveis; \n III - acessar as redes de infraestrutura e demais equipamentos urbanos existentes; e \n IV - evitar sobreposição aos espaços definidos como Áreas de Preservação Permanente - APP. \n\n - Lei n° 1519/1997 - julgada inconstitucional ADI. """,
+        "Lago Norte": """**LC n° 1055/2025** \n - Autoriza a concessão de direito real de uso para ocupação de áreas públicas intersticiais contíguas aos lotes (becos) destinados ao uso residencial das Unidades de Uso e Ocupação do Solo - UOS RE 1 previstas na Lei Complementar nº 948, de 16 de janeiro de 2019, localizados nas Regiões Administrativas do Lago Sul e do Lago Norte. \n - Para efeito de aplicação desta Lei Complementar, consideram-se contíguas as áreas públicas intersticiais restritas ao espaço situado entre as dimensões dos lotes do mesmo conjunto, indicadas no Anexo I desta Lei Complementar. \n - A concessão de que trata o caput se dá para as ocupações comprovadamente existentes até a data da publicação desta Lei Complementar. \n - A concessão de direito real de uso de que trata esta Lei Complementar é vedada, ou condicionada ao atendimento de condicionantes previstas em regulamento, quando a área pública for imprescindível para: \n I - garantir o acesso de pedestres a equipamentos públicos comunitários, áreas comerciais e institucionais, \n bem como paradas de transporte coletivo; \n II - garantir a circulação para rotas acessíveis; \n III - acessar as redes de infraestrutura e demais equipamentos urbanos existentes; e \n IV - evitar sobreposição aos espaços definidos como Áreas de Preservação Permanente - APP. \n\n - Lei n° 1519/1997 - julgada inconstitucional ADI. """,
+        "Cruzeiro": """**Lei n° 1063/1996** - julgada inconstitucional ADI. """,
+        "Núcleo Bandeirante": """**Lei n° 533/1993** \n - Não foi promulgada pelo governador mas teve sanção tácita pela Câmara Legislativa (ESTÁ VIGENTE) - Autoriza o fechamento com grades aos lotes residenciais da Região Administrativa VIII - Núcleo Bandeirante. \n - O proprietário ao utilizar-se dos benefícios desta Lei, deverá observar os seguintes aspectos: \n I - as melhorias permitidas se limitam a construção de varanda e garagem; \n II - deverá ser respeitada a linha demarcatória do passeio público; \n III - a utilização da área verde lateral não poderá se estender a 03 (três) metros de afastamento do imóvel. """,
+        "Paranoá": """**Lei n° 1924/1998** - julgada inconstitucional ADI. """,
+        "Park Way": """**Lei n° 1519/1997** - julgada inconstitucional ADI. """,
+        "Brazlândia": """**Lei n° 1055/1996** \n - Autoriza o cercamento e a cobertura parcial das áreas verdes em lotes residenciais das Regiões Administrativas de Brazlândia (RA IV) e Planaltina (RA VI). \n - A área permitida para cercamento com grades obedecerá à distância mínima de 1,50m (um metro e cinquenta centímetros) do passeio público e de, no máximo, 3m (três metros) na lateral, para lotes de esquina, respeitada a distância estabelecida para o passeio público, bem como o limite de 2,50m (dois metros e cinquenta centímetros) de altura. \n - As áreas autorizadas para cercamento com grade poderão ser cobertas em até 50% (cinquenta por cento) para utilização como garagem ou varanda, vedado o seu fechamento para ampliação ou construção de cômodo adicional da edificação. """,
+        "Planaltina": """**Lei n° 1055/1996** \n - Autoriza o cercamento e a cobertura parcial das áreas verdes em lotes residenciais das Regiões Administrativas de Brazlândia (RA IV) e Planaltina (RA VI). \n - A área permitida para cercamento com grades obedecerá à distância mínima de 1,50m (um metro e cinquenta centímetros) do passeio público e de, no máximo, 3m (três metros) na lateral, para lotes de esquina, respeitada a distância estabelecida para o passeio público, bem como o limite de 2,50m (dois metros e cinquenta centímetros) de altura. \n - As áreas autorizadas para cercamento com grade poderão ser cobertas em até 50% (cinquenta por cento) para utilização como garagem ou varanda, vedado o seu fechamento para ampliação ou construção de cômodo adicional da edificação. """,
+        "Riacho Fundo I": """**Lei n° 1152/1996** \n Autoriza os proprietários de lotes residenciais da Região Administrativa do Riacho Fundo a cercar com grades as áreas verdes laterais e frontais dos imóveis, observadas as seguintes condições: \n I - seja respeitada a linha demarcatória do passeio público; \n II - as melhorias se limitem ao uso da área como garagem ou varanda; \n III - estejam instalados os equipamentos urbanos de: \n a) abastecimento de água; \n b) serviços de esgoto; \n c) coleta de águas pluviais; \n d) energia elétrica; \n e) rede telefônica. \n Nenhuma cerca poderá ir além de três metros do imóvel. """,
+        "Riacho Fundo II": """**Lei n° 1152/1996** \n - Autoriza os proprietários de lotes residenciais da Região Administrativa do Riacho Fundo a cercar com grades as áreas verdes laterais e frontais dos imóveis, observadas as seguintes condições: \n I - seja respeitada a linha demarcatória do passeio público; \n II - as melhorias se limitem ao uso da área como garagem ou varanda; \n III - estejam instalados os equipamentos urbanos de: \n a) abastecimento de água; \n b) serviços de esgoto; \n c) coleta de águas pluviais; \n d) energia elétrica; \n e) rede telefônica. \n Nenhuma cerca poderá ir além de três metros do imóvel. """,
+        "Sobradinho": """**Lei n° 1902/1998** - julgada inconstitucional ADI. """,
+        }
+
+
+
+        # Simulando o dado vindo do sistema
+        # RA vinda do sistema
+        
+
+
+        ras_nome = nome_ra.strip() if nome_ra else ""
+
+
+
+        if ras_nome in ras_lista:
+            st.write("**---- Área pública contígua ao lote ----**")
+            st.write(f"**Região selecionada:** {ras_nome or 'Não informada'}")
+            if st.button("Legislação Aplicável"):
+                texto = textwrap.dedent(
+                    textos_por_ra.get(
+                        ras_nome,
+                        "Há legislação específica para esta Região Administrativa, porém o texto ainda não foi cadastrado no sistema."
+                    )
+                )
+                st.write(texto)
+            st.divider()
+
+        
+
+
+
 
         ################## certidão dos parâmetros
         # Mostrar os resultados gerais

@@ -22,6 +22,124 @@ import textwrap
 
 st.set_page_config(page_title="Ferramentas para HBT", page_icon="🌍")
 
+# ======================================================================
+# Acesso ao Geoportal com caminhos alternativos (fallback)
+# ----------------------------------------------------------------------
+# Cada consulta tenta primeiro o caminho original. Se o serviço estiver
+# fora do ar (erro HTTP, resposta que não é JSON ou JSON com "error"),
+# tenta automaticamente os caminhos alternativos abaixo. Quando o
+# serviço original voltar, ele volta a ser usado sem nenhuma alteração.
+# ======================================================================
+GEO_REST = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services"
+GEO_WMS = "https://www.geoservicos.ide.df.gov.br/arcgis/services"
+GEO_TIMEOUT = 30  # segundos
+
+
+class GeoportalIndisponivel(requests.exceptions.RequestException):
+    """Nenhum dos caminhos (original e alternativos) respondeu corretamente."""
+
+
+def _troca_qd_cipu(params):
+    # A tabela antiga (camada 17) filtrava por qd_cipu; no LOTES_REGISTRADOS o campo é pu_cipu
+    novo = dict(params)
+    if "where" in novo:
+        novo["where"] = novo["where"].replace("qd_cipu", "pu_cipu")
+    return novo
+
+
+# url original -> lista de (url alternativa, função que ajusta os parâmetros ou None)
+GEO_FALLBACKS = {
+    f"{GEO_REST}/Publico/CADASTRO_TERRITORIAL/FeatureServer/10/query": [
+        (f"{GEO_REST}/Aplicacoes/LOTES_REGISTRADOS/FeatureServer/0/query", None),
+        (f"{GEO_REST}/Publico/IDEDF/MapServer/11/query", None),
+    ],
+    f"{GEO_REST}/Publico/CADASTRO_TERRITORIAL/MapServer/10/query": [
+        (f"{GEO_REST}/Publico/IDEDF/MapServer/11/query", None),
+        (f"{GEO_REST}/Aplicacoes/LOTES_REGISTRADOS/FeatureServer/0/query", None),
+    ],
+    # Normas (pn_*)
+    f"{GEO_REST}/Publico/CADASTRO_TERRITORIAL/FeatureServer/18/query": [
+        (f"{GEO_REST}/Aplicacoes/LOTES_REGISTRADOS/FeatureServer/1/query", None),
+    ],
+    # Área do lote (qd_area)
+    f"{GEO_REST}/Publico/CADASTRO_TERRITORIAL/FeatureServer/17/query": [
+        (f"{GEO_REST}/Aplicacoes/LOTES_REGISTRADOS/FeatureServer/0/query", _troca_qd_cipu),
+    ],
+    # Cotas de soleira (mesmos campos cs_*)
+    f"{GEO_REST}/Aplicacoes/COTA_SOLEIRA/MapServer/0/query": [
+        (f"{GEO_REST}/Publico/CONTROLE_URBANO/MapServer/1/query", None),
+    ],
+}
+
+
+class _RespostaGeoportal:
+    """Imita o objeto Response do requests para não precisar mudar o resto do código."""
+
+    def __init__(self, data, url):
+        self._data = data
+        self.url = url
+        self.status_code = 200
+
+    def json(self):
+        return self._data
+
+    def raise_for_status(self):
+        return None
+
+
+def geoportal_get(url, params=None, timeout=GEO_TIMEOUT):
+    """GET no Geoportal com caminhos alternativos. Retorna um objeto com .json()."""
+    params = dict(params or {})
+    tentativas = [(url, None)] + GEO_FALLBACKS.get(url, [])
+    erros = []
+    for tentativa_url, ajuste in tentativas:
+        p = ajuste(params) if ajuste else params
+        try:
+            r = requests.get(tentativa_url, params=p, timeout=timeout)
+            r.raise_for_status()
+            data = r.json()  # falha se o servidor devolver HTML
+        except (requests.exceptions.RequestException, ValueError) as e:
+            erros.append(f"{tentativa_url.replace(GEO_REST, '')}: {e}")
+            continue
+        if isinstance(data, dict) and "error" in data:
+            msg = str(data["error"].get("message", "")).strip()
+            erros.append(f"{tentativa_url.replace(GEO_REST, '')}: {msg}")
+            continue
+        return _RespostaGeoportal(data, tentativa_url)
+    raise GeoportalIndisponivel(
+        "O Geoportal está instável e não respondeu (tente novamente mais tarde). Detalhes: "
+        + " | ".join(erros)
+    )
+
+
+def escapar_sql(valor):
+    """Evita quebrar a cláusula WHERE quando o texto tem apóstrofo."""
+    return str(valor).replace("'", "''")
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def cadastro_wms_disponivel():
+    """Verifica (com cache de 5 min) se o serviço CADASTRO_TERRITORIAL está no ar."""
+    try:
+        r = requests.get(
+            f"{GEO_REST}/Publico/CADASTRO_TERRITORIAL/MapServer",
+            params={"f": "json"},
+            timeout=10,
+        )
+        data = r.json()
+        return r.ok and "error" not in data
+    except Exception:
+        return False
+
+
+def wms_cadastro(camada):
+    """Retorna (url, layers) do WMS para 'lotes', 'quadras' ou 'conjuntos'."""
+    original = {"lotes": "6", "quadras": "3", "conjuntos": "4"}
+    alternativo = {"lotes": "230", "quadras": "227", "conjuntos": "228"}  # Publico/IDEDF
+    if cadastro_wms_disponivel():
+        return f"{GEO_WMS}/Publico/CADASTRO_TERRITORIAL/MapServer/WMSServer", original[camada]
+    return f"{GEO_WMS}/Publico/IDEDF/MapServer/WMSServer", alternativo[camada]
+
 # ----------------------------------------------------------------------
 # Bloco st.expander
 # ----------------------------------------------------------------------
@@ -149,9 +267,9 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
 
     # Adiciona a camada WMS dos lotes (desligada por padrão)
     folium.raster_layers.WmsTileLayer(
-        url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Publico/CADASTRO_TERRITORIAL/MapServer/WMSServer",
+        url=wms_cadastro("lotes")[0],
         name="Lotes Registrados",
-        layers="6",
+        layers=wms_cadastro("lotes")[1],
         fmt="image/png",
         transparent=True,
         max_zoom=23,
@@ -161,9 +279,9 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
 
     # Adiciona a camada WMS das quadras (desligada por padrão)
     folium.raster_layers.WmsTileLayer(
-        url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Publico/CADASTRO_TERRITORIAL/MapServer/WMSServer",
+        url=wms_cadastro("quadras")[0],
         name="Quadra",
-        layers="3",
+        layers=wms_cadastro("quadras")[1],
         fmt="image/png",
         transparent=True,
         max_zoom=23,
@@ -173,9 +291,9 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
 
     # Adiciona a camada WMS das quadras (desligada por padrão)
     folium.raster_layers.WmsTileLayer(
-        url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Publico/CADASTRO_TERRITORIAL/MapServer/WMSServer",
+        url=wms_cadastro("conjuntos")[0],
         name="Conjuntos",
-        layers="4",
+        layers=wms_cadastro("conjuntos")[1],
         fmt="image/png",
         transparent=False,
         max_zoom=23,
@@ -254,7 +372,7 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
             "f": "geojson"
         }
         try:
-            response = requests.get(url, params=params, timeout=10)
+            response = geoportal_get(url, params=params)
             response.raise_for_status()
             data = response.json()
             if "features" in data and len(data["features"]) > 0:
@@ -285,7 +403,7 @@ with st.expander("Buscar Lotes e Soleiras por Mapa", expanded=False):
             "f": "geojson"
         }
         try:
-            response = requests.get(url, params=params, timeout=10)
+            response = geoportal_get(url, params=params)
             response.raise_for_status()
             data = response.json()
             if "features" in data and len(data["features"]) > 0:
@@ -378,13 +496,13 @@ with st.expander("Encontre o CIPU do imóvel pelo Endereço", expanded=False):
                     search_term = quadra_input.upper()
 
                     query_params = {
-                        "where": f"UPPER({ADDRESS_FIELD_NAME}) LIKE '%{search_term}%'",
+                        "where": f"UPPER({ADDRESS_FIELD_NAME}) LIKE '%{escapar_sql(search_term)}%'",
                         "outFields": "*",
                         "f": "json",
                         "resultRecordCount": 5000,
                     }
 
-                    response = requests.get(ARCGIS_SERVICE_URL, params=query_params)
+                    response = geoportal_get(ARCGIS_SERVICE_URL, params=query_params)
                     response.raise_for_status()
                     data = response.json()
 
@@ -442,13 +560,13 @@ with st.expander("Encontre o CIPU do imóvel pelo Endereço", expanded=False):
                     search_term = quadra_input2.upper()
 
                     query_params = {
-                        "where": f"UPPER({CARTORIAL_NAME}) LIKE '%{search_term}%'",
+                        "where": f"UPPER({CARTORIAL_NAME}) LIKE '%{escapar_sql(search_term)}%'",
                         "outFields": "*",
                         "f": "json",
                         "resultRecordCount": 5000,
                     }
 
-                    response = requests.get(ARCGIS_SERVICE_URL, params=query_params)
+                    response = geoportal_get(ARCGIS_SERVICE_URL, params=query_params)
                     response.raise_for_status()
                     data = response.json()
 
@@ -581,9 +699,9 @@ if submitted:
 
         # Monta a cláusula WHERE para a API principal
         if search_field == "CIU":
-            where_clause = f"pu_ciu LIKE '{search_value}%'"
+            where_clause = f"pu_ciu LIKE '{escapar_sql(search_value)}%'"
         elif search_field == "pu_arquivo":
-            where_clause = f"pu_arquivo LIKE '%{search_value}%'" # Usar % em ambos os lados para buscar dentro da string
+            where_clause = f"pu_arquivo LIKE '%{escapar_sql(search_value)}%'" # Usar % em ambos os lados para buscar dentro da string
         else:  # CIPU
             if not search_value.isdigit():
                 st.error("Para pesquisa por CIPU, insira um número válido.")
@@ -606,7 +724,7 @@ if submitted:
         }
        
         try:
-            response = requests.get(api_url, params=params)
+            response = geoportal_get(api_url, params=params)
             response.raise_for_status() # Levanta um erro para códigos de status HTTP ruins (4xx ou 5xx)
             data = response.json()
 
@@ -925,7 +1043,7 @@ if st.session_state.all_general_data:
 
                             
                             try:
-                                response = requests.post(url_submit, data=payload)
+                                response = requests.post(url_submit, data=payload, timeout=GEO_TIMEOUT)
                                 response.raise_for_status()
                                 res_json = response.json()
                             except Exception as e:
@@ -940,7 +1058,7 @@ if st.session_state.all_general_data:
                             
                             status_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/certidaoparametrosurb/GPServer/certidao_parametros_urb/jobs/{job_id}?f=json"
                             while True:
-                                status_resp = requests.get(status_url).json()
+                                status_resp = requests.get(status_url, timeout=GEO_TIMEOUT).json()
                                 job_status = status_resp.get("jobStatus", "")
                                 if job_status == "esriJobSucceeded":
                                     break
@@ -949,14 +1067,14 @@ if st.session_state.all_general_data:
                                     st.stop()
                                 time.sleep(2)
                             
-                            job_info = requests.get(status_url).json()
+                            job_info = requests.get(status_url, timeout=GEO_TIMEOUT).json()
                             pdf_url = None
                             
                             if "results" in job_info:
                                 for key, val in job_info["results"].items():
                                     if key == "arquivo":
                                         result_url = f"https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Geoprocessing/certidaoparametrosurb/GPServer/certidao_parametros_urb/jobs/{job_id}/{val['paramUrl']}?f=json"
-                                        result = requests.get(result_url).json()
+                                        result = requests.get(result_url, timeout=GEO_TIMEOUT).json()
                                         value = result.get("value")
 
                                         # Se for link direto (caso da certidão), usa como está
@@ -1004,7 +1122,7 @@ if st.session_state.all_general_data:
                     "f": "json"
                 }
                 try:
-                    response_LUOS = requests.get(api_url_LUOS, params=params_LUOS)
+                    response_LUOS = geoportal_get(api_url_LUOS, params=params_LUOS)
                     response_LUOS.raise_for_status()
                     data_LUOS = response_LUOS.json()
                     if data_LUOS.get("features"):
@@ -1158,7 +1276,7 @@ if st.session_state.all_general_data:
                 
 
                 try:
-                    response_normas = requests.get(api_url_normas, params=params_normas)
+                    response_normas = geoportal_get(api_url_normas, params=params_normas)
                     response_normas.raise_for_status()
                     data_normas = response_normas.json()
                     if data_normas.get("features"):
@@ -1170,7 +1288,7 @@ if st.session_state.all_general_data:
                     st.session_state.normas_data_map[selected_cipu] = None
 
                 try:
-                    response_normas2 = requests.get(api_url_normas2, params=params_normas2)
+                    response_normas2 = geoportal_get(api_url_normas2, params=params_normas2)
                     response_normas2.raise_for_status()
                     data_normas2 = response_normas2.json()
                     if data_normas2.get("features"):
@@ -1338,7 +1456,7 @@ if st.session_state.all_general_data:
                     "returnGeometry": "false",
                     "f": "json"
                 }
-                response = requests.get(api_url, params=params_cipu)
+                response = geoportal_get(api_url, params=params_cipu)
                 response.raise_for_status()
                 data = response.json()
                 if data.get("features"):
@@ -1353,12 +1471,12 @@ if st.session_state.all_general_data:
                 if ciu_value:
                     try:
                         params_ciu = {
-                            "where": f"cs_ciu = '{ciu_value}'",
+                            "where": f"cs_ciu = '{escapar_sql(ciu_value)}'",
                             "outFields": "cs_cota, cs_link, cs_cipu, cs_ciu",
                             "returnGeometry": "false",
                             "f": "json"
                         }
-                        response = requests.get(api_url, params=params_ciu)
+                        response = geoportal_get(api_url, params=params_ciu)
                         response.raise_for_status()
                         data = response.json()
                         if data.get("features"):
@@ -1403,9 +1521,9 @@ if st.session_state.all_general_data:
 
         # Adiciona a camada WMS dos lotes (desligada por padrão)
         folium.raster_layers.WmsTileLayer(
-            url="https://www.geoservicos.ide.df.gov.br/arcgis/services/Publico/CADASTRO_TERRITORIAL/MapServer/WMSServer",
+            url=wms_cadastro("lotes")[0],
             name="Lotes Registrados",
-            layers="6",
+            layers=wms_cadastro("lotes")[1],
             fmt="image/png",
             transparent=True,
             max_zoom=23,
@@ -1725,14 +1843,14 @@ with st.expander("**Busca automática nos PDFs do Anexo III - LUOS**", expanded=
 
                             api_url_LUOS = "https://www.geoservicos.ide.df.gov.br/arcgis/rest/services/Publico/LUOS/MapServer/11/query"
                             params_LUOS = {
-                                "where": f"lu_cipu = '{str(selected_cipu).strip()}'",
+                                "where": f"lu_cipu = {str(selected_cipu).strip().split('.')[0]}",
                                 "outFields": "lu_cod_par",
                                 "returnGeometry": "false",
                                 "f": "json"
                             }
 
                             try:
-                                response_LUOS = requests.get(api_url_LUOS, params=params_LUOS)
+                                response_LUOS = geoportal_get(api_url_LUOS, params=params_LUOS)
                                 response_LUOS.raise_for_status()
                                 data_LUOS = response_LUOS.json()
 
@@ -1848,7 +1966,7 @@ with st.expander("**Busca automática nos PDFs do Anexo III - LUOS**", expanded=
                     "f": "json"
                 }
 
-                response = requests.get(api_url, params=params)
+                response = geoportal_get(api_url, params=params)
                 response.raise_for_status()
                 data = response.json()
 
@@ -2067,7 +2185,11 @@ def consultar_cipu(cipu):
         "returnGeometry": "true",
         "f": "json"
     }
-    r = requests.get(api_url, params=params).json()
+    try:
+        r = geoportal_get(api_url, params=params).json()
+    except requests.exceptions.RequestException as e:
+        st.warning(f"CIPU {cipu}: não foi possível consultar ({e})")
+        return []
     results = []
     for f in r.get("features", []):
         x, y = f["attributes"].get("x"), f["attributes"].get("y")
@@ -2403,7 +2525,7 @@ with st.expander("**Perfil de elevação**", expanded=False):
 
                 st.info("Buscando o perfil de elevação...")
                 
-                response = requests.post(REST_URL, data=params)
+                response = requests.post(REST_URL, data=params, timeout=60)
                 response_json = response.json()
 
                 # Verificar se a resposta contém resultados
